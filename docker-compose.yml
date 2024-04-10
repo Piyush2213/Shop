@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+  dbservice:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: Pk@123001
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 --password=$$MYSQL_PASSWORD
+      timeout: 20s
+      retries: 10
+    ports:
+      - 3306:3306
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - bootapp
+
+
+  appservice:
+    build: .
+    depends_on:
+      dbservice:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://dbservice:3306/Shop?useSSL=false&serverTimezone=UTC&useLegacyDatetimeCode=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Pk@123001
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: DEBUG
+      LOGGING_LEVEL_ORG_HIBERNATE_TYPE_DESCRIPTOR_SQL_BASICBINDER: TRACE
+      SPRING_JPA_GENERATE_DDL: "true"
+
+    volumes:
+      - app_data:/path/to/app_data
+    ports:
+      - 8080:8080
+    networks:
+      - bootapp
+
+
+
+
+
+networks:
+  bootapp:
+    driver: bridge
+
+volumes:
+  db_data:
+  app_data:
+
