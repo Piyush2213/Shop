@@ -1,11 +1,8 @@
 package com.shopping.Ecommerce.controller;
 
-import com.shopping.Ecommerce.entity.Admin;
-import com.shopping.Ecommerce.exception.ExistsException;
+import com.shopping.Ecommerce.response.ServiceResponse;
 import com.shopping.Ecommerce.request.AdminLoginRequest;
-import com.shopping.Ecommerce.request.CustomerLoginRequest;
 import com.shopping.Ecommerce.response.AdminLoginResponse;
-import com.shopping.Ecommerce.response.CustomerLoginResponse;
 import com.shopping.Ecommerce.service.AdminService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,15 +21,10 @@ public class AdminLogin {
     AdminService adminService;
 
     @PostMapping("/login")
-    public ResponseEntity<AdminLoginResponse> response(@RequestBody AdminLoginRequest adminLoginRequest){
-        try {
-            AdminLoginResponse response = adminService.adminLogin(adminLoginRequest);
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-        } catch (ExistsException ex) {
-            AdminLoginResponse errorResponse = new AdminLoginResponse();
-            errorResponse.setMessage(ex.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-        }
+    public ResponseEntity<ServiceResponse<AdminLoginResponse>> adminLogin(@RequestBody AdminLoginRequest adminLoginRequest){
+
+        ServiceResponse<AdminLoginResponse> response = adminService.adminLogin(adminLoginRequest);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
 
     }
 

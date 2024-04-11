@@ -1,17 +1,19 @@
 package com.shopping.Ecommerce.service;
 
 import com.shopping.Ecommerce.entity.Customer;
-import com.shopping.Ecommerce.exception.ExistsException;
-import com.shopping.Ecommerce.exception.ServiceResponse;
+import com.shopping.Ecommerce.exception.CommonResponse;
+import com.shopping.Ecommerce.response.ServiceResponse;
 import com.shopping.Ecommerce.repository.CustomerRepository;
 import com.shopping.Ecommerce.request.CustomerLoginRequest;
 import com.shopping.Ecommerce.request.CustomerSignUpRequest;
 import com.shopping.Ecommerce.response.CustomerLoginResponse;
 import com.shopping.Ecommerce.response.CustomerSignUpResponse;
 import io.jsonwebtoken.SignatureAlgorithm;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.Jwts;
@@ -20,11 +22,13 @@ import io.jsonwebtoken.Jwts;
 public class CustomerService {
     @Autowired
     private CustomerRepository customerRepository;
+    @Autowired
+    private AuthService authService;
 
-    public CustomerSignUpResponse signUpCustomer(CustomerSignUpRequest request) {
+    public ServiceResponse<CustomerSignUpResponse> signUpCustomer(CustomerSignUpRequest request) {
         String email = request.getEmail();
         if (customerRepository.findByEmail(email) != null) {
-            throw new ExistsException("Customer with email " + email + " already exists.");
+            return new ServiceResponse<>(null, "Customer with email " + email + " already exists.", HttpStatus.BAD_REQUEST);
         }
 
         Customer newCustomer = new Customer();
@@ -37,9 +41,13 @@ public class CustomerService {
         Customer savedCustomer = customerRepository.save(newCustomer);
 
         CustomerSignUpResponse response = new CustomerSignUpResponse();
-        response.setMessage("Added successfully");
+        response.setName(savedCustomer.getName());
+        response.setPhone(savedCustomer.getPhone());
+        response.setEmail(savedCustomer.getEmail());
+        response.setAddress(savedCustomer.getAddress());
 
-        return response;
+
+        return new ServiceResponse<>(response, "SignUp successfully", HttpStatus.OK);
     }
 
 
@@ -58,6 +66,24 @@ public class CustomerService {
 
         return new ServiceResponse<>(response, "Login successfully", HttpStatus.OK);
 
+    }
+
+    public CommonResponse customerLogout(HttpServletRequest req, HttpServletResponse res){
+        String token = req.getHeader("Authorization");
+        Customer customer = authService.getUserFromToken(token);
+
+        if (customer != null) {
+            customerRepository.updateToken(customer.getId(), null);
+            Cookie tokenCookie = new Cookie("token", null);
+            tokenCookie.setMaxAge(0);
+            tokenCookie.setPath("/");
+            res.addCookie(tokenCookie);
+            CommonResponse response = new CommonResponse(HttpStatus.OK, "Logout successful!");
+            return response;
+        } else {
+            CommonResponse response = new CommonResponse(HttpStatus.UNAUTHORIZED, "Invalid Token or Network related Issue!");
+            return response;
+        }
     }
 
 

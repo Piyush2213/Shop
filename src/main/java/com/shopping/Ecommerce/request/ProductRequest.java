@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductRequest {
-    private int id;
     private String name;
     private String imageURL;
     private String subCategory;

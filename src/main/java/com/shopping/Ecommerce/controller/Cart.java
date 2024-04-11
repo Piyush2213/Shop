@@ -1,6 +1,7 @@
 package com.shopping.Ecommerce.controller;
-
-import com.shopping.Ecommerce.exception.ServiceResponse;
+import com.shopping.Ecommerce.response.CartItemListResponse;
+import com.shopping.Ecommerce.response.CartItemResponse;
+import com.shopping.Ecommerce.response.ServiceResponse;
 import com.shopping.Ecommerce.request.CartRequest;
 import com.shopping.Ecommerce.response.CartItemCreateResponse;
 import com.shopping.Ecommerce.service.CartService;
@@ -18,6 +19,17 @@ public class Cart {
     @PostMapping("/cartItems")
     public ResponseEntity<ServiceResponse<CartItemCreateResponse>> createCartItem(HttpServletRequest req, @RequestBody CartRequest request) {
         ServiceResponse<CartItemCreateResponse> serviceResponse = cartService.createCartItem(req, request);
+        return ResponseEntity.status(serviceResponse.getStatus()).body(serviceResponse);
+    }
+    @GetMapping("/cartItems")
+    public ResponseEntity<ServiceResponse<CartItemListResponse>> getAllCartItems(HttpServletRequest req){
+        ServiceResponse<CartItemListResponse> serviceResponse = cartService.getAllCartItems(req);
+        return ResponseEntity.status(serviceResponse.getStatus()).body(serviceResponse);
+    }
+
+    @GetMapping("/cartItems/{itemId}")
+    public ResponseEntity<ServiceResponse<CartItemResponse>> getCartItems(HttpServletRequest req, @PathVariable("itemId") Integer itemId){
+        ServiceResponse<CartItemResponse> serviceResponse = cartService.getCartItems(req, itemId);
         return ResponseEntity.status(serviceResponse.getStatus()).body(serviceResponse);
     }
 

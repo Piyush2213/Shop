@@ -22,7 +22,7 @@ public class AuthService {
     public Customer getUserFromToken(String token) {
         Customer customer = customerRepository.findByToken(token);
         if (customer == null) {
-            throw new ExistsException("Invalid token or user not found.");
+            return null;
         }
         return customer;
     }

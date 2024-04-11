@@ -31,6 +31,10 @@ public class CartItem {
     @Column(name = "quantity")
     private int quantity;
 
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
+
     @Column(name = "total_price")
     private BigDecimal totalPrice;
 

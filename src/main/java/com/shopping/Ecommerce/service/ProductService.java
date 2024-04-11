@@ -1,7 +1,7 @@
 package com.shopping.Ecommerce.service;
 
 import com.shopping.Ecommerce.entity.Product;
-import com.shopping.Ecommerce.exception.ExistsException;
+import com.shopping.Ecommerce.response.ServiceResponse;
 import com.shopping.Ecommerce.repository.ProductRepository;
 import com.shopping.Ecommerce.request.ProductRequest;
 import com.shopping.Ecommerce.response.ProductResponse;
@@ -11,7 +11,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 
@@ -44,12 +43,11 @@ public class ProductService {
     }
 
 
-    public ProductResponse getProduct(Integer id){
+    public ServiceResponse<ProductResponse> getProduct(Integer id){
         //optional does not return null even if product not found, it will return empty object.
         Optional<Product> optionalProduct = productRepository.findById(id);
-
         if (optionalProduct.isEmpty()) {
-            throw new ExistsException("Product Not Found");
+            return new ServiceResponse<> (null, "Product Not Found", HttpStatus.NOT_FOUND);
         }
 
         Product product = optionalProduct.get();
@@ -65,14 +63,16 @@ public class ProductService {
         response.setCategory(product.getCategory());
         response.setGender(product.getGender());
 
-        return response;
+        return new ServiceResponse<>(response, "Product Found", HttpStatus.OK);
     }
 
 
-    public ProductResponse addProduct(ProductRequest request){
+    public ServiceResponse<ProductResponse> addProduct(ProductRequest request){
+        if (request.getName() == null || request.getPrice() == null) {
+            return new ServiceResponse<>(null, "Name and Price are required fields", HttpStatus.BAD_REQUEST);
+        }
         Product newProduct = new Product();
 
-        newProduct.setId(request.getId());
         newProduct.setName(request.getName());
         newProduct.setCategory(request.getCategory());
         newProduct.setGender(request.getGender());
@@ -86,7 +86,6 @@ public class ProductService {
 
         ProductResponse response = new ProductResponse();
 
-        response.setId(savedProduct.getId());
         response.setName(savedProduct.getName());
         response.setCategory(savedProduct.getCategory());
         response.setGender(savedProduct.getGender());
@@ -96,15 +95,15 @@ public class ProductService {
         response.setImageURL(savedProduct.getImageURL());
         response.setSubCategory(savedProduct.getSubCategory());
 
-        return response;
+        return new ServiceResponse<>(response, "Added Successfully", HttpStatus.OK);
     }
 
 
 
-    public ProductResponse updateProduct(Integer id, ProductRequest request){
+    public ServiceResponse<ProductResponse> updateProduct(Integer id, ProductRequest request){
         Optional<Product> optionalProduct = productRepository.findById(id);
         if (optionalProduct.isEmpty()) {
-            throw new ExistsException("Product not Found.");
+            return new ServiceResponse<>(null, "Product not found", HttpStatus.NOT_FOUND);
         }
 
         Product existingProduct = optionalProduct.get();
@@ -148,20 +147,20 @@ public class ProductService {
         response.setSubCategory(updatedProduct.getSubCategory());
 
 
-        return response;
+        return new ServiceResponse<>(response, "Updated Successfully", HttpStatus.OK);
     }
 
 
 
 
 
-    public String deleteProduct(Integer id) {
+    public ServiceResponse<String> deleteProduct(Integer id) {
         Optional<Product> optionalProduct = productRepository.findById(id);
         if (optionalProduct.isEmpty()) {
-            throw new ExistsException("Product Not Found");
+            return new ServiceResponse<>(null,"Product Not Found", HttpStatus.BAD_REQUEST);
         }
         productRepository.deleteById(id);
-        return "Product deleted successfully";
+        return new ServiceResponse<>(null,"Product Deleted!", HttpStatus.BAD_REQUEST);
     }
 
 }

@@ -1,4 +1,4 @@
-package com.shopping.Ecommerce.exception;
+package com.shopping.Ecommerce.response;
 
 import org.springframework.http.HttpStatus;
 

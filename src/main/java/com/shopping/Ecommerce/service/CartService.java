@@ -4,9 +4,11 @@ import com.shopping.Ecommerce.entity.Cart;
 import com.shopping.Ecommerce.entity.CartItem;
 import com.shopping.Ecommerce.entity.Customer;
 import com.shopping.Ecommerce.entity.Product;
-import com.shopping.Ecommerce.exception.ExistsException;
-import com.shopping.Ecommerce.exception.ServiceResponse;
 import com.shopping.Ecommerce.repository.CartRepository;
+import com.shopping.Ecommerce.response.CartItemListResponse;
+import com.shopping.Ecommerce.response.CartItemResponse;
+import com.shopping.Ecommerce.response.ServiceResponse;
+import com.shopping.Ecommerce.repository.CartItemRepository;
 import com.shopping.Ecommerce.repository.CustomerRepository;
 import com.shopping.Ecommerce.repository.ProductRepository;
 import com.shopping.Ecommerce.request.CartRequest;
@@ -18,6 +20,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -28,6 +32,9 @@ public class CartService {
 
     @Autowired
     ProductRepository productRepository;
+
+    @Autowired
+    CartItemRepository cartItemRepository;
 
     @Autowired
     CartRepository cartRepository;
@@ -107,8 +114,86 @@ public class CartService {
         response.setAmount(existingProduct.get().getPrice().multiply(BigDecimal.valueOf(quantity)));
         response.setProductId(productId);
         return new ServiceResponse<>(response, "Cart item added successfully.", HttpStatus.OK);
-
-
-
     }
+
+    public ServiceResponse<CartItemListResponse> getAllCartItems(HttpServletRequest req) {
+        String token = req.getHeader("Authorization");
+
+        Customer customer = getUserFromToken(token);
+        if (customer == null) {
+            return new ServiceResponse<>(null, "Invalid token or user not found.", HttpStatus.UNAUTHORIZED);
+        }
+
+        int id = customer.getId();
+
+        List<CartItem> cartItems = cartItemRepository.findAllByCustomerId(id);
+        List<CartItemResponse> cartItemResponses = new ArrayList<>();
+        BigDecimal totalAmount = BigDecimal.ZERO;
+
+        for (CartItem cartItem : cartItems) {
+            Product product = productRepository.findById(cartItem.getProduct().getId()).orElse(null);
+            if (product != null) {
+                calculateAmount(cartItem);
+                CartItemResponse response = new CartItemResponse();
+                response.setId(cartItem.getId());
+                response.setProductId(product.getId());
+                response.setImageURL(product.getImageURL());
+                response.setProductName(product.getName());
+                response.setQuantity(cartItem.getQuantity());
+                response.setAmount(cartItem.getTotalPrice());
+                cartItemResponses.add(response);
+                totalAmount = totalAmount.add(cartItem.getTotalPrice());
+            }
+        }
+
+        CartItemListResponse cartItemListResponse = new CartItemListResponse(cartItemResponses, totalAmount);
+
+        return new ServiceResponse<>(cartItemListResponse, "Response Generated", HttpStatus.OK);
+    }
+
+
+    public ServiceResponse<CartItemResponse> getCartItems(HttpServletRequest req, Integer itemId){
+        String token = req.getHeader("Authorization");
+
+        Customer customer = getUserFromToken(token);
+        if (customer == null) {
+            return new ServiceResponse<>(null, "Invalid token or user not found.", HttpStatus.UNAUTHORIZED );
+        }
+
+        // Fetch cart items associated with the customer
+        List<CartItem> cartItems = customer.getCart().getCartItems();
+
+        Optional<CartItem> foundItem = cartItems.stream().filter(item -> item.getId() == itemId).findFirst();
+        if (foundItem.isPresent()) {
+            CartItem cartItem = foundItem.get();
+            CartItemResponse response = new CartItemResponse();
+            response.setId(cartItem.getId());
+            response.setProductName(cartItem.getProduct().getName());
+            response.setImageURL(cartItem.getProduct().getImageURL());
+            response.setQuantity(cartItem.getQuantity());
+            response.setAmount(cartItem.getTotalPrice());
+            response.setProductId(cartItem.getProduct().getId());
+            return new ServiceResponse<>(response, "CartItem found.", HttpStatus.OK);
+        } else {
+            return new ServiceResponse<>(null, "CartItem not found.", HttpStatus.NOT_FOUND);
+        }
+    }
+
+
+
+    public BigDecimal calculateAmount(CartItem cartItem) {
+        int productId = cartItem.getProduct().getId();
+        int quantity = cartItem.getQuantity();
+
+        Product product = productRepository.findById(productId).orElse(null);
+
+        if (product != null) {
+            BigDecimal productPrice = product.getPrice();
+            BigDecimal amount = productPrice.multiply(BigDecimal.valueOf(quantity));
+            return amount;
+        } else {
+            return BigDecimal.ZERO;
+        }
+    }
+
 }

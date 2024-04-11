@@ -2,6 +2,7 @@ package com.shopping.Ecommerce.service;
 
 import com.shopping.Ecommerce.entity.Admin;
 import com.shopping.Ecommerce.exception.ExistsException;
+import com.shopping.Ecommerce.response.ServiceResponse;
 import com.shopping.Ecommerce.repository.AdminRepository;
 import com.shopping.Ecommerce.request.AdminLoginRequest;
 import com.shopping.Ecommerce.response.AdminLoginResponse;
@@ -11,7 +12,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,10 +20,10 @@ public class AdminService {
     @Autowired
     AdminRepository adminRepository;
 
-    public AdminLoginResponse adminLogin(AdminLoginRequest request){
+    public ServiceResponse<AdminLoginResponse> adminLogin(AdminLoginRequest request){
         Admin admin = adminRepository.findByEmail(request.getEmail());
         if (admin == null || !admin.getPassword().equals(request.getPassword())) {
-            throw new ExistsException("Invalid email or password");
+            return new ServiceResponse<>(null, "Invalid email or password", HttpStatus.BAD_REQUEST);
         }
 
 
@@ -33,7 +34,7 @@ public class AdminService {
         System.out.println("Geeting admin:" + role);
         AdminLoginResponse response = new AdminLoginResponse(token, capitalizedFirstName, role, "Login Successful");
 
-        return ResponseEntity.ok(response).getBody();
+        return new ServiceResponse<>(response, "LogIn Successful", HttpStatus.OK);
     }
 
 

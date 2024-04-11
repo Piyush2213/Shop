@@ -1,7 +1,6 @@
 package com.shopping.Ecommerce.controller;
 
-import com.shopping.Ecommerce.exception.ErrorResponse;
-import com.shopping.Ecommerce.exception.ExistsException;
+import com.shopping.Ecommerce.response.ServiceResponse;
 import com.shopping.Ecommerce.request.ProductRequest;
 import com.shopping.Ecommerce.response.ProductResponse;
 import com.shopping.Ecommerce.response.ProductsResponse;
@@ -35,48 +34,42 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getProduct(@PathVariable Integer id){
-        try {
-            ProductResponse response = productService.getProduct(id);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (ExistsException ex) {
-            ExistsException errorResponse = new ExistsException("Product not found");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-
+    public ResponseEntity<ServiceResponse<ProductResponse>> getProduct(@PathVariable Integer id){
+        ServiceResponse<ProductResponse> response = productService.getProduct(id);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
-    @PostMapping
-    public ResponseEntity<ProductResponse> addProduct(@RequestBody ProductRequest productRequest, HttpServletRequest req ) {
+
+    @PostMapping("/add")
+    public ResponseEntity<ServiceResponse<ProductResponse>> addProduct(@RequestBody ProductRequest productRequest, HttpServletRequest req ) {
         if ( authService.isAdmin(req)) {
-            ProductResponse response = productService.addProduct(productRequest);
-            return ResponseEntity.ok(response);
+            ServiceResponse<ProductResponse> response = productService.addProduct(productRequest);
+            return ResponseEntity.status(response.getStatus()).body(response);
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            ServiceResponse<ProductResponse> errorResponse = new ServiceResponse<>(null, "Invalid token or not authorized", HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProduct(HttpServletRequest req, @PathVariable Integer id, @RequestBody ProductRequest productRequest) {
+    public ResponseEntity<ServiceResponse<ProductResponse>> updateProduct(HttpServletRequest req, @PathVariable Integer id, @RequestBody ProductRequest productRequest) {
         if (authService.isAdmin(req)) {
-            ProductResponse response = productService.updateProduct(id, productRequest);
-            return ResponseEntity.ok(response);
+            ServiceResponse<ProductResponse> response = productService.updateProduct(id, productRequest);
+            return ResponseEntity.status(response.getStatus()).body(response);
         } else {
-            ErrorResponse errorResponse = new ErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid token or not authorized");
+            ServiceResponse<ProductResponse> errorResponse = new ServiceResponse<>(null, "Invalid token or not authorized", HttpStatus.UNAUTHORIZED);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteProduct(@PathVariable Integer id) {
-        try {
-            String message = productService.deleteProduct(id);
-            return ResponseEntity.ok(message);
-        } catch (ExistsException ex) {
-            String message = ex.getMessage();
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
+    public ResponseEntity<ServiceResponse<String>> deleteProduct(@PathVariable Integer id, HttpServletRequest req) {
+        if (authService.isAdmin(req)){
+            ServiceResponse<String> response = productService.deleteProduct(id);
+            return ResponseEntity.status(response.getStatus()).body(response);
+        }else{
+            ServiceResponse<String> errorResponse = new ServiceResponse<>(null, "Invalid token or not authorized", HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
     }
 
