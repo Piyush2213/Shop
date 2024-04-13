@@ -1,4 +1,5 @@
 package com.shopping.Ecommerce.controller;
+import com.shopping.Ecommerce.entity.CartItem;
 import com.shopping.Ecommerce.response.CartItemListResponse;
 import com.shopping.Ecommerce.response.CartItemResponse;
 import com.shopping.Ecommerce.response.ServiceResponse;
@@ -30,6 +31,18 @@ public class Cart {
     @GetMapping("/cartItems/{itemId}")
     public ResponseEntity<ServiceResponse<CartItemResponse>> getCartItems(HttpServletRequest req, @PathVariable("itemId") Integer itemId){
         ServiceResponse<CartItemResponse> serviceResponse = cartService.getCartItems(req, itemId);
+        return ResponseEntity.status(serviceResponse.getStatus()).body(serviceResponse);
+    }
+
+    @PutMapping("/cartItems/{itemId}")
+    public ResponseEntity<ServiceResponse<CartItemResponse>> updateCartItem(HttpServletRequest req, @PathVariable("itemId") Integer itemId, @RequestBody CartItem updatedCartItem){
+        ServiceResponse<CartItemResponse> serviceResponse = cartService.updateCartItem(req, itemId, updatedCartItem);
+        return ResponseEntity.status(serviceResponse.getStatus()).body(serviceResponse);
+    }
+
+    @DeleteMapping("/cartItems/{itemId}")
+    public ResponseEntity<ServiceResponse<String>> deleteCartItem(HttpServletRequest req, @PathVariable("itemId") Integer itemId){
+        ServiceResponse<String> serviceResponse = cartService.deleteCartItem(req, itemId);
         return ResponseEntity.status(serviceResponse.getStatus()).body(serviceResponse);
     }
 

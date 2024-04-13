@@ -1,9 +1,13 @@
 package com.shopping.Ecommerce.request;
 
+import com.shopping.Ecommerce.entity.Address;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -18,6 +22,14 @@ public class CustomerSignUpRequest {
 
     private String phone;
 
-    private String address;
+    private List<Address> addresses;
+
+    public CustomerSignUpRequest(String name, String email, String password, String phone) {
+        this.name = name;
+        this.email = email;
+        this.password = password;
+        this.phone = phone;
+        this.addresses = new ArrayList<>();
+    }
 
 }

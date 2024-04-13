@@ -124,14 +124,17 @@ public class CartService {
             return new ServiceResponse<>(null, "Invalid token or user not found.", HttpStatus.UNAUTHORIZED);
         }
 
-        int id = customer.getId();
+        List<CartItem> cartItems = new ArrayList<>();
+        Cart cart = customer.getCart();
+        if (cart != null) {
+            cartItems = cart.getCartItems();
+        }
 
-        List<CartItem> cartItems = cartItemRepository.findAllByCustomerId(id);
         List<CartItemResponse> cartItemResponses = new ArrayList<>();
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (CartItem cartItem : cartItems) {
-            Product product = productRepository.findById(cartItem.getProduct().getId()).orElse(null);
+            Product product = cartItem.getProduct();
             if (product != null) {
                 calculateAmount(cartItem);
                 CartItemResponse response = new CartItemResponse();
@@ -176,6 +179,95 @@ public class CartService {
             return new ServiceResponse<>(response, "CartItem found.", HttpStatus.OK);
         } else {
             return new ServiceResponse<>(null, "CartItem not found.", HttpStatus.NOT_FOUND);
+        }
+    }
+
+    public ServiceResponse<CartItemResponse> updateCartItem(HttpServletRequest req, Integer itemId, CartItem updatedCartItem){
+        String token = req.getHeader("Authorization");
+        Customer customer = getUserFromToken(token);
+        if (customer == null) {
+            return new ServiceResponse<>(null, "Invalid token or user not found.", HttpStatus.UNAUTHORIZED );
+        }
+
+        Cart cart = customer.getCart();
+        if (cart == null) {
+            return new ServiceResponse<>(null, "Cart not found for the user.", HttpStatus.NOT_FOUND);
+        }
+
+        List<CartItem> cartItems = cart.getCartItems();
+
+        if (cartItems == null || cartItems.isEmpty()) {
+            return new ServiceResponse<>(null, "Cart items not found.", HttpStatus.NOT_FOUND);
+        }
+
+        Optional<CartItem> cartItemOptional = cartItems.stream()
+                .filter(item -> item.getId() == itemId)
+                .findFirst();
+
+        if (cartItemOptional.isPresent()) {
+            CartItem cartItem = cartItemOptional.get();
+            cartItem.setQuantity(updatedCartItem.getQuantity());
+
+            BigDecimal itemPrice = cartItem.getProduct().getPrice();
+            BigDecimal totalPrice = itemPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
+            cartItem.setTotalPrice(totalPrice);
+
+            BigDecimal totalAmount = cartItems.stream()
+                    .map(item -> item.getTotalPrice() != null ? item.getTotalPrice() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            cart.setTotalAmount(totalAmount);
+
+            cartRepository.save(cart);
+
+            CartItemResponse response = new CartItemResponse();
+            response.setId(cartItem.getId());
+            response.setProductName(cartItem.getProduct().getName());
+            response.setImageURL(cartItem.getProduct().getImageURL());
+            response.setQuantity(cartItem.getQuantity());
+            response.setAmount(totalPrice);
+            response.setProductId(cartItem.getProduct().getId());
+
+            return new ServiceResponse<>(response, "Cart item updated successfully.", HttpStatus.OK);
+        } else {
+            return new ServiceResponse<>(null, "Cart item not found.", HttpStatus.NOT_FOUND);
+        }
+    }
+
+
+    public ServiceResponse<String> deleteCartItem(HttpServletRequest req, Integer itemId){
+        String token = req.getHeader("Authorization");
+        Customer customer = getUserFromToken(token);
+
+        if (customer == null) {
+            return new ServiceResponse<>(null, "Invalid token or user not found.", HttpStatus.UNAUTHORIZED);
+        }
+
+        Cart cart = customer.getCart();
+        if (cart == null) {
+            return new ServiceResponse<>(null, "Cart not found for the user.", HttpStatus.NOT_FOUND);
+        }
+
+        List<CartItem> cartItems = cart.getCartItems();
+        Optional<CartItem> cartItemOptional = cartItems.stream()
+                .filter(item -> item.getId() == itemId)
+                .findFirst();
+
+        if (cartItemOptional.isPresent()) {
+            CartItem cartItem = cartItemOptional.get();
+            cartItems.remove(cartItem);
+
+            cartItemRepository.delete(cartItem);
+
+            BigDecimal totalAmount = cartItems.stream()
+                    .map(item -> item.getTotalPrice() != null ? item.getTotalPrice() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            cart.setTotalAmount(totalAmount);
+
+            cartRepository.save(cart);
+
+            return new ServiceResponse<>(null, "Cart item deleted successfully.", HttpStatus.OK);
+        } else {
+            return new ServiceResponse<>(null, "Cart item not found.", HttpStatus.NOT_FOUND);
         }
     }
 

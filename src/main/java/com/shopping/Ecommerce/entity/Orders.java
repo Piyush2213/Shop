@@ -13,7 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @Setter
-@Data
+@ToString
 @Table(name = "orders")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Orders {

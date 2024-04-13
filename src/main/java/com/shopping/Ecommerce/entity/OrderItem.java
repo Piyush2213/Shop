@@ -32,7 +32,11 @@ public class OrderItem {
     @Column(name = "quantity")
     private Integer quantity;
 
-    @Column(name = "amount")
-    private BigDecimal amount;
+
+    @Column(name = "image_url")
+    private String imageURL;
+
+    @Column(name = "price")
+    private BigDecimal price;
 
 }

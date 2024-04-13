@@ -1,5 +1,6 @@
 package com.shopping.Ecommerce.service;
 
+import com.shopping.Ecommerce.entity.Address;
 import com.shopping.Ecommerce.entity.Customer;
 import com.shopping.Ecommerce.exception.CommonResponse;
 import com.shopping.Ecommerce.response.ServiceResponse;
@@ -17,6 +18,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.Jwts;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class CustomerService {
@@ -36,7 +40,17 @@ public class CustomerService {
         newCustomer.setEmail(email);
         newCustomer.setPassword(request.getPassword());
         newCustomer.setPhone(request.getPhone());
-        newCustomer.setAddress(request.getAddress());
+
+        List<Address> addresses = new ArrayList<>();
+
+        if (request.getAddresses() != null) {
+            for (Address address : request.getAddresses()) {
+                address.setCustomer(newCustomer);
+                addresses.add(address);
+            }
+        }
+
+        newCustomer.setAddresses(addresses);
 
         Customer savedCustomer = customerRepository.save(newCustomer);
 
@@ -44,11 +58,11 @@ public class CustomerService {
         response.setName(savedCustomer.getName());
         response.setPhone(savedCustomer.getPhone());
         response.setEmail(savedCustomer.getEmail());
-        response.setAddress(savedCustomer.getAddress());
-
+        response.setAddresses(savedCustomer.getAddresses());
 
         return new ServiceResponse<>(response, "SignUp successfully", HttpStatus.OK);
     }
+
 
 
 
