@@ -7,10 +7,9 @@ import com.shopping.Ecommerce.service.OrderService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/order")
@@ -20,6 +19,18 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<ServiceResponse<OrderResponse>> createOrder(@RequestBody Address address, HttpServletRequest req) {
         ServiceResponse<OrderResponse> serviceResponse = orderService.createOrder(address, req);
+        return ResponseEntity.status(serviceResponse.getStatus()).body(serviceResponse);
+    }
+
+    @GetMapping
+    public ResponseEntity<ServiceResponse<List<OrderResponse>>> getAllOrders(HttpServletRequest req){
+        ServiceResponse<List<OrderResponse>> serviceResponse = orderService.getAllOrders(req);
+        return ResponseEntity.status(serviceResponse.getStatus()).body(serviceResponse);
+    }
+
+    @DeleteMapping("/{orderId}")
+    public ResponseEntity<ServiceResponse<String>> cancelOrder(@PathVariable("orderId") int orderId,HttpServletRequest req){
+        ServiceResponse<String> serviceResponse = orderService.cancelOrder(orderId,req);
         return ResponseEntity.status(serviceResponse.getStatus()).body(serviceResponse);
     }
 }

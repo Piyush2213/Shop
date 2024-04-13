@@ -18,6 +18,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -39,6 +40,9 @@ public class OrderService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private OrderItemRepository orderItemRepository;
 
 
     @Transactional
@@ -115,6 +119,74 @@ public class OrderService {
         cartRepository.deleteByCustomerId(customer.getId());
 
         return new ServiceResponse<>(response, "Order created successfully.", HttpStatus.CREATED);
+    }
+    @Transactional
+    public ServiceResponse<List<OrderResponse>> getAllOrders(HttpServletRequest req) {
+        String token = req.getHeader("Authorization");
+        Customer customer = getUserFromToken(token);
+        if (customer == null) {
+            return new ServiceResponse<>(null, "Invalid token or user not found.", HttpStatus.UNAUTHORIZED);
+        }
+
+        List<Orders> orders = orderRepository.findAllByCustomerId(customer.getId());
+        List<OrderResponse> orderResponses = orders.stream()
+                .map(order -> createOrderResponse(order, customer))
+                .collect(Collectors.toList());
+
+        return new ServiceResponse<>(orderResponses, "All orders retrieved successfully.", HttpStatus.OK);
+    }
+
+    private OrderResponse createOrderResponse(Orders order, Customer customer) {
+        OrderResponse response = new OrderResponse();
+        response.setId(order.getId());
+        response.setName(customer.getName());
+        response.setTotalAmount(order.getTotalAmount());
+        response.setCustomerId(customer.getId());
+        response.setDateTime(order.getDateTime());
+        response.setOrderStatus(order.getOrderStatus());
+        response.setDeliveryAddress(order.getDeliveryAddress());
+        response.setProductIds(order.getOrderItems().stream()
+                .map(orderItem -> Long.valueOf(orderItem.getProductId()))
+                .collect(Collectors.toList()));
+
+        List<OrderItemResponse> orderItemResponses = order.getOrderItems().stream()
+                .map(orderItem -> {
+                    OrderItemResponse itemResponse = new OrderItemResponse();
+                    itemResponse.setProductId(orderItem.getProductId());
+                    itemResponse.setProductName(getProductName(orderItem.getProductId()));
+                    itemResponse.setProductImageURL(orderItem.getImageURL());
+                    itemResponse.setQuantity(orderItem.getQuantity());
+                    itemResponse.setPrice(orderItem.getPrice());
+                    return itemResponse;
+                })
+                .collect(Collectors.toList());
+
+        response.setOrderItems(orderItemResponses);
+        return response;
+    }
+
+
+    @Transactional
+    public ServiceResponse<String> cancelOrder(int orderId, HttpServletRequest req) {
+        String token = req.getHeader("Authorization");
+        Customer customer = getUserFromToken(token);
+
+        if (customer == null) {
+            return new ServiceResponse<>(null, "Invalid token or user not found.", HttpStatus.UNAUTHORIZED);
+        }
+
+        // Check if the order belongs to the customer
+        Orders order = orderRepository.findByIdAndCustomerId(Long.valueOf(orderId), customer.getId());
+        if (order == null) {
+            return new ServiceResponse<>(null, "Order not found or does not belong to the customer.", HttpStatus.NOT_FOUND);
+        }
+
+        order.setOrderStatus(OrderStatus.Cancelled);
+        orderRepository.save(order);
+
+        orderItemRepository.deleteByOrder(order);
+
+        return new ServiceResponse<>(null,"Order cancelled successfully.", HttpStatus.OK);
     }
 
 
