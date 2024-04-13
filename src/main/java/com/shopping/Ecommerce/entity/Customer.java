@@ -44,6 +44,9 @@ public class Customer {
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
     private Cart cart;
 
+    private String otp;
+    @Column(name = "verified")
+    private boolean verified;
 
 
 }

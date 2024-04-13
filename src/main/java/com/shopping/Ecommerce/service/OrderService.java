@@ -43,6 +43,8 @@ public class OrderService {
 
     @Autowired
     private OrderItemRepository orderItemRepository;
+    @Autowired
+    private EmailService emailService;
 
 
     @Transactional
@@ -92,7 +94,6 @@ public class OrderService {
 
         Orders createdOrder = orderRepository.save(order);
 
-
         OrderResponse response = new OrderResponse();
         response.setId(createdOrder.getId());
         response.setName(customer.getName());
@@ -114,6 +115,19 @@ public class OrderService {
             orderItemResponses.add(itemResponse);
         }
         response.setOrderItems(orderItemResponses);
+
+        String subject = "Order Confirmation";
+        String body = "Thank you for your order!\n\n" +
+                "Order ID: " + createdOrder.getId() + "\n" +
+                "Total Amount: " + createdOrder.getTotalAmount() + "\n" +
+                "Delivery Address: " + savedAddress.getHouseNo() + ", " + savedAddress.getStreet() + ", " + savedAddress.getCity() + ", " + savedAddress.getPin() + "\n" +
+                "Products:\n";
+
+        for (OrderItemResponse orderItem : orderItemResponses) {
+            body += orderItem.getProductName() + " - Quantity: " + orderItem.getQuantity() + ", Price: " + orderItem.getPrice() + "\n";
+        }
+        emailService.sendEmail(customer.getEmail(), subject, body);
+
 
         cartItemRepository.deleteByCart(cart);
         cartRepository.deleteByCustomerId(customer.getId());
@@ -185,6 +199,9 @@ public class OrderService {
         orderRepository.save(order);
 
         orderItemRepository.deleteByOrder(order);
+        String subject = "Order Confirmation";
+        String body = "Thank you for your shopping!\n\n";
+        emailService.sendEmail(customer.getEmail(), subject, body);
 
         return new ServiceResponse<>(null,"Order cancelled successfully.", HttpStatus.OK);
     }

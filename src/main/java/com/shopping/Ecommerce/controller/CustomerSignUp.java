@@ -21,4 +21,10 @@ public class CustomerSignUp {
         return ResponseEntity.status(response.getStatus()).body(response);
 
     }
+
+    @PostMapping("/verify")
+    public ResponseEntity<ServiceResponse<String>> verifyUser(@RequestParam String email, @RequestParam String otp){
+        ServiceResponse<String> res = customerService.verifyUser(email, otp);
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
 }

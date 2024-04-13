@@ -18,4 +18,6 @@ public class CustomerSignUpResponse {
     private String email;
     private String phone;
     private List<Address> addresses;
+    private boolean verified;
+    private String message;
 }

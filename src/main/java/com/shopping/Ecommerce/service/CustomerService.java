@@ -21,6 +21,7 @@ import io.jsonwebtoken.Jwts;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Service
 public class CustomerService {
@@ -29,17 +30,25 @@ public class CustomerService {
     @Autowired
     private AuthService authService;
 
+
+    @Autowired
+    EmailService emailService;
+
     public ServiceResponse<CustomerSignUpResponse> signUpCustomer(CustomerSignUpRequest request) {
         String email = request.getEmail();
         if (customerRepository.findByEmail(email) != null) {
             return new ServiceResponse<>(null, "Customer with email " + email + " already exists.", HttpStatus.BAD_REQUEST);
         }
+        Random r = new Random();
+        String otp = String.format("%06d", r.nextInt(100000));
 
         Customer newCustomer = new Customer();
         newCustomer.setName(request.getName());
         newCustomer.setEmail(email);
         newCustomer.setPassword(request.getPassword());
         newCustomer.setPhone(request.getPhone());
+        newCustomer.setOtp(otp);
+        newCustomer.setVerified(false);
 
         List<Address> addresses = new ArrayList<>();
 
@@ -54,11 +63,16 @@ public class CustomerService {
 
         Customer savedCustomer = customerRepository.save(newCustomer);
 
+        String subject = "Email Verfication";
+        String body = "Thank you for signing up with our E-commerce website! Your verification OTP is " + savedCustomer.getOtp() + ". Please use this OTP to complete the verification process. Please do not share this OTP with anyone else for security reasons.";
+        emailService.sendEmail(email, subject, body);
+
         CustomerSignUpResponse response = new CustomerSignUpResponse();
         response.setName(savedCustomer.getName());
         response.setPhone(savedCustomer.getPhone());
         response.setEmail(savedCustomer.getEmail());
         response.setAddresses(savedCustomer.getAddresses());
+        response.setMessage("OTP sent successfully!");
 
         return new ServiceResponse<>(response, "SignUp successfully", HttpStatus.OK);
     }
@@ -70,6 +84,10 @@ public class CustomerService {
         Customer customer = customerRepository.findByEmail(request.getEmail());
         if (customer == null || !customer.getPassword().equals(request.getPassword())) {
             return new ServiceResponse<>(null, "Invalid email or password.", HttpStatus.BAD_REQUEST);
+        }
+        if(!customer.isVerified()){
+            return new ServiceResponse<>(null, "Verify first by giving otp.", HttpStatus.BAD_REQUEST);
+
         }
 
         String token = generateToken(customer);
@@ -98,6 +116,22 @@ public class CustomerService {
             CommonResponse response = new CommonResponse(HttpStatus.UNAUTHORIZED, "Invalid Token or Network related Issue!");
             return response;
         }
+    }
+
+    public ServiceResponse<String> verifyUser(String email, String otp) {
+        Customer customer = customerRepository.findByEmail(email);
+
+        if(customer != null && customer.isVerified()) {
+            return new ServiceResponse<>(null, "User Already Verified", HttpStatus.OK);
+        }else if(otp.equals(customer.getOtp())) {
+            customer.setVerified(true);
+            customerRepository.save(customer);
+            return new ServiceResponse<>(null, "Login successfully", HttpStatus.OK);
+        }else {
+            return new ServiceResponse<>(null, "User not Verified", HttpStatus.OK);
+        }
+
+
     }
 
 
