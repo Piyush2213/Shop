@@ -4,6 +4,8 @@ WORKDIR /application
 
 COPY pom.xml .
 COPY src src
+COPY src/main/resources/fashion.csv .
+
 
 RUN mvn clean package -DskipTests
 

@@ -4,6 +4,7 @@ import com.shopping.Ecommerce.entity.Address;
 import com.shopping.Ecommerce.response.OrderResponse;
 import com.shopping.Ecommerce.response.ServiceResponse;
 import com.shopping.Ecommerce.service.OrderService;
+import com.shopping.Ecommerce.service.OrderStatusUpdater;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,9 @@ import java.util.List;
 public class OrderController {
     @Autowired
     OrderService orderService;
+    @Autowired
+    OrderStatusUpdater orderStatusUpdater;
+
     @PostMapping
     public ResponseEntity<ServiceResponse<OrderResponse>> createOrder(@RequestBody Address address, HttpServletRequest req) {
         ServiceResponse<OrderResponse> serviceResponse = orderService.createOrder(address, req);
@@ -32,5 +36,13 @@ public class OrderController {
     public ResponseEntity<ServiceResponse<String>> cancelOrder(@PathVariable("orderId") int orderId,HttpServletRequest req){
         ServiceResponse<String> serviceResponse = orderService.cancelOrder(orderId,req);
         return ResponseEntity.status(serviceResponse.getStatus()).body(serviceResponse);
+    }
+
+
+
+    @PostMapping("/update-status")
+    public ResponseEntity<String> updateOrderStatus() {
+        orderStatusUpdater.updateOrderStatus();
+        return ResponseEntity.ok("Order statuses updated successfully.");
     }
 }

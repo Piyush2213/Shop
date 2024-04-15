@@ -32,6 +32,14 @@ services:
       LOGGING_LEVEL_ORG_HIBERNATE_TYPE_DESCRIPTOR_SQL_BASICBINDER: TRACE
       SPRING_JPA_GENERATE_DDL: "true"
 
+
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_USERNAME: piyushydv22133@gmail.com
+      SPRING_MAIL_PASSWORD: ruwjhqmfvayjmezg
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
+
     volumes:
       - app_data:/path/to/app_data
     ports:

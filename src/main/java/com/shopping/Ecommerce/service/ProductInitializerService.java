@@ -2,13 +2,13 @@ package com.shopping.Ecommerce.service;
 
 import com.shopping.Ecommerce.entity.Product;
 import com.shopping.Ecommerce.repository.ProductRepository;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,15 +36,15 @@ public class ProductInitializerService {
         return random.nextInt(maxQuantity - minQuantity + 1) + minQuantity;
     }
 
-    @PostConstruct
     public void initializeData() {
         if (productRepository.count() == 0) {
-            try (BufferedReader br = new BufferedReader(new FileReader("fashion.csv"))) {
-                // ProductId,Gender,Category,SubCategory,ProductType,Colour,Usage,ProductTitle,Image,ImageURL
-                // price, description, quantity
+            try (
+                    InputStream inputStream = getClass().getClassLoader().getResourceAsStream("fashion.csv");
+                    BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))
+            ) {
                 String line;
                 List<Product> products = new ArrayList<>();
-                br.readLine();
+                br.readLine(); // Skip header line
                 while ((line = br.readLine()) != null) {
                     List<String> values = Arrays.asList(line.split(","));
                     Product product = new Product(
@@ -59,12 +59,11 @@ public class ProductInitializerService {
                     );
                     product.setPrice(getRandomPrice());
                     product.setQuantity(getRandomQuantity());
-
                     products.add(product);
                 }
                 productRepository.saveAll(products);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Error initializing data from fashion.csv", e);
             }
         }
     }
