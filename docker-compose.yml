@@ -17,6 +17,26 @@ services:
       - bootapp
 
 
+  es8:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    container_name: es8
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - es8_data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - bootapp
+
   appservice:
     build: .
     depends_on:
@@ -31,6 +51,12 @@ services:
       LOGGING_LEVEL_ORG_HIBERNATE_SQL: DEBUG
       LOGGING_LEVEL_ORG_HIBERNATE_TYPE_DESCRIPTOR_SQL_BASICBINDER: TRACE
       SPRING_JPA_GENERATE_DDL: "true"
+
+
+      SPRING_DATA_ELASTICSEARCH_CLUSTER_NODES: es8:9200
+      SPRING_DATA_ELASTICSEARCH_CLUSTER_NAME: my-elasticsearch-cluster
+      SPRING_DATA_ELASTICSEARCH_REPOSITORIES_INDEX_CREATION_STRATEGY: create
+      SPRING_DATA_ELASTICSEARCH_REPOSITORIES_INDEX_NAME: product_index
 
 
       SPRING_MAIL_HOST: smtp.gmail.com
@@ -58,4 +84,5 @@ networks:
 volumes:
   db_data:
   app_data:
+  es8_data:
 

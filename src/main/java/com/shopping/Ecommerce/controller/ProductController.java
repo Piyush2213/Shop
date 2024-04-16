@@ -1,9 +1,12 @@
 package com.shopping.Ecommerce.controller;
 
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import com.shopping.Ecommerce.entity.ProductES;
 import com.shopping.Ecommerce.response.ServiceResponse;
 import com.shopping.Ecommerce.request.ProductRequest;
 import com.shopping.Ecommerce.response.ProductResponse;
 import com.shopping.Ecommerce.response.ProductsResponse;
+import com.shopping.Ecommerce.service.ElasticSearchService;
 import com.shopping.Ecommerce.service.ProductService;
 import com.shopping.Ecommerce.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,7 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import co.elastic.clients.elasticsearch.core.search.Hit;
 
+
+
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -22,6 +30,21 @@ public class ProductController {
     private ProductService productService;
     @Autowired
     private AuthService authService;
+    @Autowired
+    private ElasticSearchService elasticSearchService;
+
+    @GetMapping("/fuzzySearch/{approximateProductName}")
+    List<ProductES> fuzzySearch(@PathVariable String approximateProductName) throws IOException {
+        SearchResponse<ProductES> searchResponse = elasticSearchService.fuzzySearch(approximateProductName);
+        List<Hit<ProductES>> hitList = searchResponse.hits().hits();
+        System.out.println(hitList);
+        List<ProductES> productList = new ArrayList<>();
+        for (Hit<ProductES> hit :hitList){
+            productList.add(hit.source());
+        }
+        return productList;
+    }
+
 
     @GetMapping
     public ResponseEntity<List<ProductsResponse>> getAllProducts(
