@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.Jwts;
@@ -29,6 +30,8 @@ public class CustomerService {
     private CustomerRepository customerRepository;
     @Autowired
     private AuthService authService;
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
 
     @Autowired
@@ -82,7 +85,7 @@ public class CustomerService {
 
     public ServiceResponse<CustomerLoginResponse> customerLogin(CustomerLoginRequest request){
         Customer customer = customerRepository.findByEmail(request.getEmail());
-        if (customer == null || !customer.getPassword().equals(request.getPassword())) {
+        if (customer == null || !passwordEncoder.matches(request.getPassword(), customer.getPassword()))  {
             return new ServiceResponse<>(null, "Invalid email or password.", HttpStatus.BAD_REQUEST);
         }
         if(!customer.isVerified()){
