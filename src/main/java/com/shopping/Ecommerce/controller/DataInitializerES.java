@@ -34,7 +34,7 @@ public class DataInitializerES {
             try (
                     InputStream inputStream = getClass().getClassLoader().getResourceAsStream("fashion.csv");
                     BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))
-                ) {
+            ) {
                 // ProductId,Gender,Category,SubCategory,ProductType,Colour,Usage,ProductTitle,Image,ImageURL
                 // price, description, quantity
                 String line;
