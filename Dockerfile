@@ -11,8 +11,8 @@ RUN mvn clean package -DskipTests
 
 FROM openjdk:17
 
-COPY --from=build /application/target/Ecommerce-0.0.1-SNAPSHOT.jar /Ecommerce-0.0.1-SNAPSHOT.jar
+COPY --from=build /application/target/ecommerce-0.0.1-SNAPSHOT.jar /ecommerce-0.0.1-SNAPSHOT.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "/Ecommerce-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "/ecommerce-0.0.1-SNAPSHOT.jar"]
