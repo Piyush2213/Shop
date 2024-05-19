@@ -22,6 +22,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/products")
+@CrossOrigin(origins = {"*"}, allowedHeaders = {"*"}, exposedHeaders = { "*" }, methods = {RequestMethod.GET, RequestMethod.DELETE, RequestMethod.POST, RequestMethod.PUT})
+
 public class ProductController {
     private final ProductService productService;
     private final AuthService authService;
@@ -49,8 +51,10 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<List<ProductsResponse>> getAllProducts(
             @RequestParam(name = "page", defaultValue = "1") int page,
-            @RequestParam(name = "perPage", defaultValue = "26") int perPage) {
-        List<ProductsResponse> responseList = productService.getAllProducts(page, perPage);
+            @RequestParam(name = "perPage", defaultValue = "26") int perPage,
+            @RequestParam(name = "sort", defaultValue = "asc") String sort,
+            @RequestParam(name = "subcategory", required = false) List<String> subCategory) {
+        List<ProductsResponse> responseList = productService.getAllProducts(page, perPage, sort, subCategory);
         return new ResponseEntity<>(responseList, HttpStatus.OK);
     }
 
@@ -91,5 +95,11 @@ public class ProductController {
             ServiceResponse<String> errorResponse = new ServiceResponse<>(null, UNAUTHORIZED_MESSAGE, HttpStatus.UNAUTHORIZED);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<ServiceResponse<Long>> getProductCount() {
+        ServiceResponse<Long> response = productService.productCount();
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 }

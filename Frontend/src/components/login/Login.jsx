@@ -24,12 +24,14 @@ export function Login() {
         try {
 
             const response = await axios.post(`${base_url}/customers/login`, { email, password });
-            const data = response.data;
+            const token = response.data.data.token;
+            console.log(token);
+            console.log(response.data.data.name);
     
-            if (data.token) {
+            if (token) {
                 setErrorMessage('');
-                Cookies.set('token', data.token);
-                Cookies.set('firstName', data.firstName);
+                Cookies.set('token', token);
+                Cookies.set('firstName', response.data.data.name);
                 navigate('/products');
             } else {
                 setErrorMessage('Invalid email or password. Please try again.');

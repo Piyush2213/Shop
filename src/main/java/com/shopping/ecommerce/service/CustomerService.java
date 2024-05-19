@@ -13,6 +13,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -35,13 +36,16 @@ public class CustomerService {
     private final EmailService emailService;
     private final Random random;
 
+    private final ModelMapper modelMapper;
+
     @Autowired
     public CustomerService(CustomerRepository customerRepository, AuthService authService,
-                           BCryptPasswordEncoder passwordEncoder, EmailService emailService) {
+                           BCryptPasswordEncoder passwordEncoder, EmailService emailService, ModelMapper modelMapper) {
         this.customerRepository = customerRepository;
         this.authService = authService;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+        this.modelMapper = modelMapper;
         this.random = new Random();
     }
 
@@ -53,11 +57,7 @@ public class CustomerService {
 
         String otp = String.format("%06d", random.nextInt(100000));
 
-        Customer newCustomer = new Customer();
-        newCustomer.setName(request.getName());
-        newCustomer.setEmail(email);
-        newCustomer.setPassword(request.getPassword());
-        newCustomer.setPhone(request.getPhone());
+        Customer newCustomer = modelMapper.map(request, Customer.class);
         newCustomer.setOtp(otp);
         newCustomer.setVerified(false);
 
@@ -78,11 +78,9 @@ public class CustomerService {
         String body = "Thank you for signing up with our E-commerce website! Your verification OTP is " + savedCustomer.getOtp() + ". Please use this OTP to complete the verification process. Please do not share this OTP with anyone else for security reasons.";
         emailService.sendEmail(email, subject, body);
 
-        CustomerSignUpResponse response = new CustomerSignUpResponse();
-        response.setName(savedCustomer.getName());
-        response.setPhone(savedCustomer.getPhone());
-        response.setEmail(savedCustomer.getEmail());
-        response.setAddresses(savedCustomer.getAddresses());
+
+
+        CustomerSignUpResponse response = modelMapper.map(savedCustomer, CustomerSignUpResponse.class);
         response.setMessage("OTP sent successfully!");
 
         return new ServiceResponse<>(response, "SignUp successfully", HttpStatus.OK);
@@ -129,7 +127,7 @@ public class CustomerService {
 
         if(customer != null && customer.isVerified()) {
             return new ServiceResponse<>(null, "User Already Verified", HttpStatus.OK);
-        }else if(otp.equals(customer.getOtp())) {
+        }else if(customer!=null && otp.equals(customer.getOtp())) {
             customer.setVerified(true);
             customerRepository.save(customer);
             return new ServiceResponse<>(null, "Verified successfully", HttpStatus.OK);

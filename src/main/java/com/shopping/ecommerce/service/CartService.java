@@ -14,6 +14,7 @@ import com.shopping.ecommerce.repository.ProductRepository;
 import com.shopping.ecommerce.request.CartRequest;
 import com.shopping.ecommerce.response.CartItemCreateResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -33,14 +34,16 @@ public class CartService {
     private final ProductRepository productRepository;
     private final CartItemRepository cartItemRepository;
     private final CartRepository cartRepository;
+    private final ModelMapper modelMapper;
 
     @Autowired
     public CartService(CustomerRepository customerRepository, ProductRepository productRepository,
-                       CartItemRepository cartItemRepository, CartRepository cartRepository) {
+                       CartItemRepository cartItemRepository, CartRepository cartRepository, ModelMapper modelMapper) {
         this.customerRepository = customerRepository;
         this.productRepository = productRepository;
         this.cartItemRepository = cartItemRepository;
         this.cartRepository = cartRepository;
+        this.modelMapper = modelMapper;
     }
 
     public ServiceResponse<CartItemCreateResponse> createCartItem(HttpServletRequest req, CartRequest request){
@@ -127,15 +130,12 @@ public class CartService {
             Product product = cartItem.getProduct();
             if (product != null) {
                 calculateAmount(cartItem);
-                CartItemResponse response = new CartItemResponse();
-                response.setId(cartItem.getId());
+                CartItemResponse response = modelMapper.map(cartItem, CartItemResponse.class);
                 response.setProductId(product.getId());
                 response.setImageURL(product.getImageURL());
                 response.setProductName(product.getName());
-                response.setQuantity(cartItem.getQuantity());
-                response.setAmount(cartItem.getTotalPrice());
-                cartItemResponses.add(response);
                 totalAmount = totalAmount.add(cartItem.getTotalPrice());
+                cartItemResponses.add(response);
             }
         }
 
@@ -157,12 +157,9 @@ public class CartService {
         Optional<CartItem> foundItem = cartItems.stream().filter(item -> item.getId() == itemId).findFirst();
         if (foundItem.isPresent()) {
             CartItem cartItem = foundItem.get();
-            CartItemResponse response = new CartItemResponse();
-            response.setId(cartItem.getId());
+            CartItemResponse response = modelMapper.map(cartItem, CartItemResponse.class);
             response.setProductName(cartItem.getProduct().getName());
             response.setImageURL(cartItem.getProduct().getImageURL());
-            response.setQuantity(cartItem.getQuantity());
-            response.setAmount(cartItem.getTotalPrice());
             response.setProductId(cartItem.getProduct().getId());
             return new ServiceResponse<>(response, "CartItem found.", HttpStatus.FOUND);
         } else {
@@ -207,11 +204,9 @@ public class CartService {
 
             cartRepository.save(cart);
 
-            CartItemResponse response = new CartItemResponse();
-            response.setId(cartItem.getId());
+            CartItemResponse response = modelMapper.map(cartItem, CartItemResponse.class);
             response.setProductName(cartItem.getProduct().getName());
             response.setImageURL(cartItem.getProduct().getImageURL());
-            response.setQuantity(cartItem.getQuantity());
             response.setAmount(totalPrice);
             response.setProductId(cartItem.getProduct().getId());
 

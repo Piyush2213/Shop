@@ -14,6 +14,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/order")
+@CrossOrigin(origins = {"*"}, allowedHeaders = {"*"}, exposedHeaders = { "*" }, methods = {RequestMethod.GET, RequestMethod.DELETE, RequestMethod.POST, RequestMethod.PUT})
+
 public class OrderController {
     private final OrderService orderService;
     private final OrderStatusUpdater orderStatusUpdater;

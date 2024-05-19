@@ -6,19 +6,16 @@ import com.shopping.ecommerce.response.OrderItemResponse;
 import com.shopping.ecommerce.response.OrderResponse;
 import com.shopping.ecommerce.response.ServiceResponse;
 import jakarta.transaction.Transactional;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
-
-
 import jakarta.servlet.http.HttpServletRequest;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Service
 public class OrderService {
@@ -30,11 +27,12 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final OrderItemRepository orderItemRepository;
     private final EmailService emailService;
+    private final ModelMapper modelMapper;
 
     @Autowired
     public OrderService(CustomerRepository customerRepository, OrderRepository orderRepository, CartRepository cartRepository,
                         CartItemRepository cartItemRepository, AddressRepository addressRepository, ProductRepository productRepository,
-                        OrderItemRepository orderItemRepository, EmailService emailService) {
+                        OrderItemRepository orderItemRepository, EmailService emailService, ModelMapper modelMapper) {
         this.customerRepository = customerRepository;
         this.orderRepository = orderRepository;
         this.cartRepository = cartRepository;
@@ -43,6 +41,7 @@ public class OrderService {
         this.productRepository = productRepository;
         this.orderItemRepository = orderItemRepository;
         this.emailService = emailService;
+        this.modelMapper = modelMapper;
     }
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
@@ -107,12 +106,8 @@ public class OrderService {
 
         List<OrderItemResponse> orderItemResponses = new ArrayList<>();
         for (OrderItem orderItem : createdOrder.getOrderItems()) {
-            OrderItemResponse itemResponse = new OrderItemResponse();
-            itemResponse.setProductId(orderItem.getProductId());
+            OrderItemResponse itemResponse = modelMapper.map(orderItem ,OrderItemResponse.class);
             itemResponse.setProductName(getProductName(orderItem.getProductId()));
-            itemResponse.setProductImageURL(orderItem.getImageURL());
-            itemResponse.setQuantity(orderItem.getQuantity());
-            itemResponse.setPrice(orderItem.getPrice());
             orderItemResponses.add(itemResponse);
         }
         response.setOrderItems(orderItemResponses);
@@ -135,6 +130,9 @@ public class OrderService {
 
         return new ServiceResponse<>(response, "Order created successfully.", HttpStatus.CREATED);
     }
+
+
+
     @Transactional
     public ServiceResponse<List<OrderResponse>> getAllOrders(HttpServletRequest req) {
         String token = req.getHeader(AUTHORIZATION_HEADER);
@@ -142,43 +140,47 @@ public class OrderService {
         if (customer == null) {
             return new ServiceResponse<>(null, INVALID_TOKEN, HttpStatus.UNAUTHORIZED);
         }
-
         List<Orders> orders = orderRepository.findAllByCustomerId(customer.getId());
-        List<OrderResponse> orderResponses = orders.stream()
-                .map(order -> createOrderResponse(order, customer))
-                .collect(Collectors.toList());
+        List<OrderResponse> orderResponses = new ArrayList<>();
+
+        for (Orders order : orders) {
+            List<OrderItemResponse> orderedProductsList = new ArrayList<>();
+            for (OrderItem orderItem : order.getOrderItems()) {
+
+                OrderItemResponse orderedProduct = new OrderItemResponse();
+                orderedProduct.setProductId(orderItem.getProductId());
+                orderedProduct.setQuantity(orderItem.getQuantity());
+                Product product = productRepository.findById(orderItem.getProductId()).orElse(null);
+                if (product != null) {
+                    orderedProduct.setProductId(product.getId());
+                    orderedProduct.setProductName(product.getName());
+                    orderedProduct.setProductImageURL(product.getImageURL());
+                    orderedProduct.setPrice(product.getPrice());
+                }
+                orderedProductsList.add(orderedProduct);
+            }
+
+            OrderResponse orderResponse = new OrderResponse();
+            orderResponse.setId(order.getId());
+            orderResponse.setTotalAmount(order.getTotalAmount());
+            orderResponse.setCustomerId(order.getCustomer().getId());
+            orderResponse.setOrderItems(orderedProductsList);
+            orderResponse.setDateTime(order.getDateTime());
+            orderResponse.setOrderStatus(order.getOrderStatus());
+            orderResponse.setDeliveryAddress(order.getDeliveryAddress());
+
+            orderResponses.add(orderResponse);
+        }
 
         return new ServiceResponse<>(orderResponses, "All orders retrieved successfully.", HttpStatus.OK);
+
+
     }
 
-    private OrderResponse createOrderResponse(Orders order, Customer customer) {
-        OrderResponse response = new OrderResponse();
-        response.setId(order.getId());
-        response.setName(customer.getName());
-        response.setTotalAmount(order.getTotalAmount());
-        response.setCustomerId(customer.getId());
-        response.setDateTime(order.getDateTime());
-        response.setOrderStatus(order.getOrderStatus());
-        response.setDeliveryAddress(order.getDeliveryAddress());
-        response.setProductIds(order.getOrderItems().stream()
-                .map(orderItem -> Long.valueOf(orderItem.getProductId()))
-                .collect(Collectors.toList()));
 
-        List<OrderItemResponse> orderItemResponses = order.getOrderItems().stream()
-                .map(orderItem -> {
-                    OrderItemResponse itemResponse = new OrderItemResponse();
-                    itemResponse.setProductId(orderItem.getProductId());
-                    itemResponse.setProductName(getProductName(orderItem.getProductId()));
-                    itemResponse.setProductImageURL(orderItem.getImageURL());
-                    itemResponse.setQuantity(orderItem.getQuantity());
-                    itemResponse.setPrice(orderItem.getPrice());
-                    return itemResponse;
-                })
-                .collect(Collectors.toList());
 
-        response.setOrderItems(orderItemResponses);
-        return response;
-    }
+
+
 
 
     @Transactional
