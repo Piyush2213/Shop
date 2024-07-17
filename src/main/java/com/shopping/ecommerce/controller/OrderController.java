@@ -1,5 +1,6 @@
 package com.shopping.ecommerce.controller;
 
+import com.razorpay.RazorpayException;
 import com.shopping.ecommerce.entity.Address;
 import com.shopping.ecommerce.response.OrderResponse;
 import com.shopping.ecommerce.response.ServiceResponse;
@@ -27,7 +28,7 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<ServiceResponse<OrderResponse>> createOrder(@RequestBody Address address, HttpServletRequest req) {
+    public ResponseEntity<ServiceResponse<OrderResponse>> createOrder(@RequestBody Address address, HttpServletRequest req) throws RazorpayException {
         ServiceResponse<OrderResponse> serviceResponse = orderService.createOrder(address, req);
         return ResponseEntity.status(serviceResponse.getStatus()).body(serviceResponse);
     }

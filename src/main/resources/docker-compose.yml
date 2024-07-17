@@ -1,0 +1,80 @@
+version: '3'
+
+services:
+  dbservice:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "Pk@123001"
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 --password=$$MYSQL_ROOT_PASSWORD
+      timeout: 20s
+      retries: 10
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - bootapp
+
+  es8:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    container_name: es8
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - es8_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - bootapp
+
+  appservice:
+    build: .
+    depends_on:
+      dbservice:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://dbservice:3306/Shop?useSSL=false&serverTimezone=UTC&useLegacyDatetimeCode=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: "Pk@123001"
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: DEBUG
+      LOGGING_LEVEL_ORG_HIBERNATE_TYPE_DESCRIPTOR_SQL_BASICBINDER: TRACE
+      SPRING_JPA_GENERATE_DDL: "true"
+
+      SPRING_DATA_ELASTICSEARCH_CLUSTER_NODES: es8:9200
+      SPRING_DATA_ELASTICSEARCH_CLUSTER_NAME: my-elasticsearch-cluster
+      SPRING_DATA_ELASTICSEARCH_REPOSITORIES_INDEX_CREATION_STRATEGY: create
+      SPRING_DATA_ELASTICSEARCH_REPOSITORIES_INDEX_NAME: product_index
+
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_USERNAME: piyushydv22133@gmail.com
+      SPRING_MAIL_PASSWORD: "ruwjhqmfvayjmezg"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
+
+    volumes:
+      - app_data:/path/to/app_data
+    ports:
+      - "8080:8080"
+    networks:
+      - bootapp
+
+networks:
+  bootapp:
+    driver: bridge
+
+volumes:
+  db_data:
+  app_data:
+  es8_data:

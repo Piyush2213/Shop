@@ -1,16 +1,28 @@
 package com.shopping.ecommerce.service;
 
+import com.razorpay.Payment;
+import com.razorpay.PaymentLink;
+import com.razorpay.RazorpayClient;
+import com.razorpay.RazorpayException;
 import com.shopping.ecommerce.entity.*;
+import com.shopping.ecommerce.exception.ExistsException;
+import com.shopping.ecommerce.exception.OrderException;
 import com.shopping.ecommerce.repository.*;
+import com.shopping.ecommerce.response.ApiResponse;
 import com.shopping.ecommerce.response.OrderItemResponse;
 import com.shopping.ecommerce.response.OrderResponse;
 import com.shopping.ecommerce.response.ServiceResponse;
 import jakarta.transaction.Transactional;
+import org.json.JSONObject;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.bind.annotation.RequestParam;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -42,13 +54,20 @@ public class OrderService {
         this.orderItemRepository = orderItemRepository;
         this.emailService = emailService;
         this.modelMapper = modelMapper;
+
     }
+
+    @Value("${razorpay.api.key}")
+    private String apiKey;
+
+    @Value("${razorpay.api.secret}")
+    private String apiSecret;
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String INVALID_TOKEN = "Invalid token or user not found.";
 
     @Transactional
-    public ServiceResponse<OrderResponse> createOrder(Address address, HttpServletRequest req) {
+    public ServiceResponse<OrderResponse> createOrder(Address address, HttpServletRequest req) throws RazorpayException {
         String token = req.getHeader(AUTHORIZATION_HEADER);
         Customer customer = getUserFromToken(token);
 
@@ -94,6 +113,34 @@ public class OrderService {
 
         Orders createdOrder = orderRepository.save(order);
 
+        RazorpayClient razorpay = new RazorpayClient(apiKey, apiSecret);
+        JSONObject paymentLinkRequest = new JSONObject();
+        paymentLinkRequest.put("amount", order.getTotalAmount().multiply(new BigDecimal(100)).intValue()); // Amount in paise (INR currency)
+
+        JSONObject customerJson = new JSONObject();
+        customerJson.put("name", order.getCustomer().getName());
+        customerJson.put("email", order.getCustomer().getEmail());
+        paymentLinkRequest.put("customer", customerJson);
+
+        JSONObject notify = new JSONObject();
+        notify.put("email", true);
+        notify.put("sms", true);
+        paymentLinkRequest.put("notify", notify);
+
+        paymentLinkRequest.put("callback_url", "http://localhost:5173/orders");
+        paymentLinkRequest.put("callback_method", "get");
+        System.out.println("Payment Link Request: " + paymentLinkRequest.toString());
+
+        PaymentLink payment = razorpay.paymentLink.create(paymentLinkRequest);
+
+        String paymentLinkId = payment.get("id");
+        String paymentLinkUrl = payment.get("short_url");
+        System.out.println("Payment Link URL: " + paymentLinkUrl);
+        System.out.println("Payment Link Id: " + paymentLinkId);
+
+
+
+
         OrderResponse response = new OrderResponse();
         response.setId(createdOrder.getId());
         response.setName(customer.getName());
@@ -103,6 +150,7 @@ public class OrderService {
         response.setOrderStatus(OrderStatus.PENDING);
         response.setDeliveryAddress(savedAddress);
         response.setProductIds(productIds);
+        response.setPaymentLinkUrl(paymentLinkUrl);
 
         List<OrderItemResponse> orderItemResponses = new ArrayList<>();
         for (OrderItem orderItem : createdOrder.getOrderItems()) {
@@ -111,6 +159,9 @@ public class OrderService {
             orderItemResponses.add(itemResponse);
         }
         response.setOrderItems(orderItemResponses);
+
+        ServiceResponse<Payment> getPaymentDetails = getPaymentDetails(paymentLinkId);
+        System.out.println("Response of redirect"+ getPaymentDetails);
 
         String subject = "Order Confirmation";
         String body = "Thank you for your order!\n\n" +
@@ -224,4 +275,22 @@ public class OrderService {
         }
         return null;
     }
+
+    public Orders findOrderById(Integer id) {
+        return orderRepository.findById(id).orElse(null);
+    }
+
+    public ServiceResponse<Payment> getPaymentDetails(String paymentId) {
+        System.out.println("Payment id recieved inside the getPaymentREsponse" + paymentId);
+        try {
+            RazorpayClient razorpay = new RazorpayClient(apiKey, apiSecret);
+            Payment payment = razorpay.payments.fetch(paymentId);
+            String status = payment.get("status");
+            System.out.println("Status is : " + status);
+            return new ServiceResponse<>(payment, "Payment details retrieved successfully.", HttpStatus.OK);
+        } catch (RazorpayException e) {
+            return new ServiceResponse<>(null, "Error in processing payment.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

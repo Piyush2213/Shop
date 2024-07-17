@@ -73,18 +73,18 @@ export function Cart() {
                 setToastMessage('You need to log in first.');
                 throw new Error('You need to log in first.');
             }
-
+    
             if (cartItems.length === 0) {
                 setToastMessage('Nothing in the cart. Please add items to your cart before placing an order.');
                 return;
             }
-
+    
             if (!address) {
                 setToastMessage('Please provide your address before placing the order.');                
                 return;
             }
-
-            
+    
+            // Create the order
             const response = await axios.post(
                 `${base_url}/order`,
                 address,
@@ -94,21 +94,43 @@ export function Cart() {
                     },
                 }
             );
-
-
+    
             if (response.status === 201) {
-                setCartItems([]);
-                setTotalAmount(0);
-                toast.success('Order placed successfully!');
-                navigate('/orders');
+                const orderId = response.data.data.id;
+    
+                // Generate the payment link
+                const paymentResponse = await axios.post(
+                    `${base_url}/api/payments/${orderId}`,
+                    {},
+                    {
+                        headers: {
+                            Authorization: token,
+                        },
+                    }
+                );
+                console.log('Payment Response:', paymentResponse.data);
+
+    
+                if (paymentResponse.status === 201) {
+                    console.log(paymentResponse.data.data.payment_link_url);
+                    const paymentLink = paymentResponse.data.data.payment_link_url; // Correct property name here
+                    if (paymentLink) {
+                        // Redirect to the Razorpay payment page
+                        window.location.href = paymentLink;
+                    } else {
+                        throw new Error('Payment link is missing.');
+                    }
+                } else {
+                    throw new Error('Failed to create payment link.');
+                }
             } else {
                 throw new Error('Failed to place order.');
             }
         } catch (error) {
-            throw new Error('Error placing order:', error);
+            toast.error(error.message);
         }
     };
-
+    
     return (
         <div>
             <Header2 username={username} token={token} />

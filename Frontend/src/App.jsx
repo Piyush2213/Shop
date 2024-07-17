@@ -12,6 +12,9 @@ import { ProductDetail } from './components/products/ProductDetail';
 import { Cart } from './components/cart/Cart';
 import AddressEntry from './components/address/AddressEntry';
 import { Orders } from './components/orders/Orders';
+import { AdminLogin } from './components/admin/header/AdminLogin';
+import { OrdersList } from './components/admin/header/allOrders/OrderList';
+import PaymentSuccess from './components/payment/PaymentSuccess';
 
 
 function App() {
@@ -22,6 +25,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/signUp" element={<SignUp />} />
         <Route path="/products" element={<Products />} />
         <Route path="/products/:id" element={<ProductDetail />} />
@@ -29,8 +33,10 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/Orderslist" element={<OrdersList />} />
         <Route path="/address-entry" element={<AddressEntry />} />
         <Route path="/verification" element={<Verification />} />
+        <Route path="/payment/:orderId" element={<PaymentSuccess />} />
       </Routes>
     </Router>
   )
