@@ -13,6 +13,9 @@ FROM openjdk:17
 
 COPY --from=build /application/target/ecommerce-0.0.1-SNAPSHOT.jar /ecommerce-0.0.1-SNAPSHOT.jar
 
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
+
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "/ecommerce-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["/run.sh"]
