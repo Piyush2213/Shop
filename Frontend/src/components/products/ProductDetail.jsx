@@ -35,8 +35,9 @@ export const ProductDetail = () => {
     const handleAddToCart = async () => {
         try {
             if (!token) {
-                // Use navigate to redirect to the login page
-                navigate('/login'); 
+                const currentPath = window.location.pathname;
+                console.log(currentPath);
+                navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
                 return;
             }
             const responseMessage = await addToCart(product.id, quantity);

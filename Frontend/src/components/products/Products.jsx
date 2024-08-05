@@ -54,8 +54,9 @@ export function Products() {
     const handleAddToCart = async (productId) => {
         try {
             if (!token) {
+                const currentPath = window.location.pathname;
                 showToastError('Login to continue shopping');
-                navigate('/login');
+                navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
                 return;
             }
 
@@ -152,7 +153,7 @@ export function Products() {
     const handleSearchButtonClick = async (searchTerm) => {
         try {
             console.log("Search button clicked with search term:", searchTerm);
-            const searchResults = await ElasticsearchService.fuzzySearch(searchTerm);
+            const searchResults = await ElasticsearchService.fuzzySearch(searchTerm, activeButton);
             console.log("Search results:", searchResults);
             setProducts(searchResults);
         } catch (error) {

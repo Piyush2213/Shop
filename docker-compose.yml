@@ -74,6 +74,23 @@ services:
     networks:
       - bootapp
 
+  frontend:
+    container_name: frontend
+    build: ./Frontend
+    depends_on:
+      - appservice
+    ports:
+      - 5173:5173
+    stdin_open: true
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    command: npm run dev
+    networks:
+      - bootapp
+    volumes:
+      - './:/app'
+      - '/app/node_modules'
+
 
 
 

@@ -4,7 +4,7 @@ import { Header } from '../header/Header';
 import { Footer } from '../footer/Footer';
 import axios from 'axios';
 import base_url from '../default/BaseUrl'
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Cookies from 'js-cookie';
 
 export function Login() {
@@ -17,6 +17,9 @@ export function Login() {
     const [errorMessage, setErrorMessage] = useState('');
 
     const navigate = useNavigate();
+    const location = useLocation();
+    const query = new URLSearchParams(location.search);
+    const redirectPath = query.get('redirect') || '/products';
 
     const handleFormSubmit = async (e) => {
         e.preventDefault();
@@ -32,7 +35,7 @@ export function Login() {
                 setErrorMessage('');
                 Cookies.set('token', token);
                 Cookies.set('firstName', response.data.data.name);
-                navigate('/products');
+                navigate(redirectPath);
             } else {
                 setErrorMessage('Invalid email or password. Please try again.');
             }
