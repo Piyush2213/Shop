@@ -8,6 +8,7 @@ import { Header2 } from '../header/Header2';
 import { useNavigate } from 'react-router-dom';
 import ElasticsearchService from '../elasticsearchService/ElasticsearchService';
 import SearchBar from '../search/SearchBar';
+import { toast, ToastContainer } from 'react-toastify';
 
 export function Products() {
     useEffect(() => {
@@ -17,55 +18,34 @@ export function Products() {
     const [products, setProducts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const perPage = 26; 
+    const perPage = 26;
     const [noResultsMessage, setNoResultsMessage] = useState('');
     const username = Cookies.get('firstName');
     const token = Cookies.get('token');
     const navigate = useNavigate();
-    const [searchTerm, setSearchTerm] = useState(''); 
-
-    const [toastMessage, setToastMessage] = useState('');
-    const [isSuccessToast, setIsSuccessToast] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
     const [activeButton, setActiveButton] = useState(null);
     const [selectedSubcategory, setSelectedSubcategory] = useState('');
 
-    const showToast = (message, isSuccess = true) => {
-        setToastMessage(message);
-        setIsSuccessToast(isSuccess);
-
-        setTimeout(() => {
-            setToastMessage('');
-        }, 3000);
-    };
-
-    const showToastSuccess = (message) => {
-        showToast(message, true);
-    };
-
-    const showToastError = (message) => {
-        showToast(message, false);
-    };
-
     const handleSubcategorySelect = (e) => {
         setSelectedSubcategory(e.target.value);
-        console.log('Selected Subcategory:', e.target.value);
     };
 
     const handleAddToCart = async (productId) => {
         try {
             if (!token) {
                 const currentPath = window.location.pathname;
-                showToastError('Login to continue shopping');
+                toast.error('Login to continue shopping');
                 navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
                 return;
             }
 
             const responseMessage = await addToCart(productId);
-            showToastSuccess(responseMessage);
+            toast.success(responseMessage);
 
             navigate('/cart');
         } catch (error) {
-            showToastError(error.message);
+            toast.error('Error Found !');
         }
     };
 
@@ -153,29 +133,27 @@ export function Products() {
     const handleSearchButtonClick = async (searchTerm) => {
         try {
             console.log("Search button clicked with search term:", searchTerm);
-            const searchResults = await ElasticsearchService.fuzzySearch(searchTerm, activeButton);
+            const searchResults = await ElasticsearchService.fuzzySearch(searchTerm);
             console.log("Search results:", searchResults);
             setProducts(searchResults);
         } catch (error) {
             console.error('Error searching products:', error);
-            showToastError(error.message);
+            toast.error("Something went wrong");
         }
     };
-    
-    
 
-    const handleSortByMaxPrice = async () => {
+    const handleSortByMaxPrice = () => {
         setActiveButton('max');
     };
 
-    const handleSortByMinPrice = async () => {
+    const handleSortByMinPrice = () => {
         setActiveButton('min');
     };
-    
+
     return (
         <div>
             <Header2 username={username} token={token} />
-            
+
             <SearchBar
                 onSearchButtonClick={handleSearchButtonClick}
                 selectedSubcategory={selectedSubcategory}
@@ -188,7 +166,7 @@ export function Products() {
                     type="button"
                     onClick={handleSortByMaxPrice}
                     className={`bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-300 ${activeButton === 'max' ? 'bg-green-600' : ''
-                        }`}
+                    }`}
                 >
                     Max Price
                 </button>
@@ -196,7 +174,7 @@ export function Products() {
                     type="button"
                     onClick={handleSortByMinPrice}
                     className={`bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-300 ${activeButton === 'min' ? 'bg-green-600' : ''
-                        }`}
+                    }`}
                 >
                     Min Price
                 </button>
@@ -265,14 +243,7 @@ export function Products() {
                 </div>
             )}
 
-            {toastMessage && (
-                <div
-                    className={`fixed bottom-4 right-4 p-4 ${isSuccessToast ? 'bg-green-500' : 'bg-red-500'
-                        } text-white rounded-md`}
-                >
-                    {toastMessage}
-                </div>
-            )}
+            <ToastContainer />
 
             <Footer />
         </div>

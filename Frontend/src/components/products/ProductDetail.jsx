@@ -1,20 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; 
+import { useParams, useNavigate } from 'react-router-dom';
 import base_url from '../default/BaseUrl';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Star } from 'lucide-react';
-import { toast } from 'react-toastify';
-
 import { Footer } from '../footer/Footer';
 import { Header2 } from '../header/Header2';
-
+import { toast, ToastContainer } from 'react-toastify';
 
 export const ProductDetail = () => {
     const { id } = useParams();
     const token = Cookies.get('token');
     const username = Cookies.get('firstName');
-    const navigate = useNavigate(); 
+    const navigate = useNavigate();
 
     const [product, setProduct] = useState(null);
     const [quantity, setQuantity] = useState(1);
@@ -23,8 +21,10 @@ export const ProductDetail = () => {
         try {
             const response = await axios.get(`${base_url}/products/${id}`);
             setProduct(response.data.data);
+            toast.success("Product loaded successfully!");
         } catch (error) {
             console.log('Error fetching product details:', error);
+            toast.error("Error fetching product details");
         }
     }, [id]);
 
@@ -35,8 +35,8 @@ export const ProductDetail = () => {
     const handleAddToCart = async () => {
         try {
             if (!token) {
+                toast.error("Error adding to cart. Please log in first.");
                 const currentPath = window.location.pathname;
-                console.log(currentPath);
                 navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
                 return;
             }
@@ -48,15 +48,8 @@ export const ProductDetail = () => {
         }
     };
 
-
     const addToCart = async (productId, quantity) => {
         try {
-            const token = Cookies.get('token');
-            console.log('Error adding product to cart:', token);
-            if (token === undefined) {
-                return `Login to continue shopping`;
-            }
-
             const response = await axios.post(
                 `${base_url}/cart/cartItems`,
                 {
@@ -81,10 +74,9 @@ export const ProductDetail = () => {
         }
     };
 
-
     const handleQuantityChange = (event) => {
         const newQuantity = parseInt(event.target.value, 10);
-        if (!isNaN(newQuantity) && newQuantity >= 1 && newQuantity <= product.quantity) {
+        if (!isNaN(newQuantity) && newQuantity >= 1 && (!product || newQuantity <= product.quantity)) {
             setQuantity(newQuantity);
         }
     };
@@ -105,7 +97,6 @@ export const ProductDetail = () => {
                             src={product.imageURL}
                         />
                         <div className="mt-6 w-full lg:mt-0 lg:w-1/2 lg:pl-10">
-                            <h2 className="text-sm font-semibold tracking-widest text-gray-500"></h2>
                             <h1 className="my-4 text-3xl font-semibold text-black">{product.name}</h1>
                             <div className="my-4 flex items-center">
                                 <span className="flex items-center space-x-1">
@@ -134,7 +125,7 @@ export const ProductDetail = () => {
                                         value={quantity}
                                         onChange={handleQuantityChange}
                                         min={1}
-                                        max={product.quantity}
+                                        max={product.quantity || 1}
                                     />
                                 </div>
                             </div>
@@ -153,7 +144,7 @@ export const ProductDetail = () => {
                 </div>
             </section>
             <Footer />
+            <ToastContainer />
         </div>
-
     );
 };
