@@ -64,7 +64,7 @@ services:
       SPRING_MAIL_HOST: smtp.gmail.com
       SPRING_MAIL_PORT: 587
       SPRING_MAIL_USERNAME: piyushydv22133@gmail.com
-      SPRING_MAIL_PASSWORD: ruwjhqmfvayjmezg
+      SPRING_MAIL_PASSWORD: pwac qtgv fpfs iehs
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
     volumes:

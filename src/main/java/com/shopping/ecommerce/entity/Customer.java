@@ -48,6 +48,12 @@ public class Customer {
     @Column(name = "verified")
     private boolean verified;
 
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
+    private List<Payments> payments;
+
+
+
+
     public void setPassword(String password) {
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         this.password = passwordEncoder.encode(password);

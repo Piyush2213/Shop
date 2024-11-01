@@ -20,7 +20,7 @@ public class Orders {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
 
 
     @ManyToOne
@@ -43,7 +43,12 @@ public class Orders {
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "payment_details_id", referencedColumnName = "id")
-    private PaymentDetails paymentDetails;
+    @Column(name = "razorPayOrderId")
+    private String razorPayOrderId;
+
+    @Column(name = "paymentLinkId")
+    private String paymentLinkId;
+
+
+
 }

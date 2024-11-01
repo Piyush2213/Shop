@@ -2,7 +2,6 @@ package com.shopping.ecommerce.controller;
 
 import com.shopping.ecommerce.exception.CommonResponse;
 import com.shopping.ecommerce.response.ServiceResponse;
-import com.shopping.ecommerce.repository.CustomerRepository;
 import com.shopping.ecommerce.request.CustomerLoginRequest;
 import com.shopping.ecommerce.response.CustomerLoginResponse;
 import com.shopping.ecommerce.service.CustomerService;

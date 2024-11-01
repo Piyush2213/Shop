@@ -16,7 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderResponse {
-    private Integer id;
+    private Long id;
     private String name;
     private BigDecimal totalAmount;
     private int customerId;
@@ -25,5 +25,5 @@ public class OrderResponse {
     private List<Long> productIds;
     private Address deliveryAddress;
     private OrderStatus orderStatus;
-    private String paymentLinkUrl;
+    private String razorPayOrderId;
 }

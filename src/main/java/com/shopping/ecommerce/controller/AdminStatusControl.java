@@ -2,9 +2,7 @@ package com.shopping.ecommerce.controller;
 
 import com.shopping.ecommerce.entity.OrderStatus;
 import com.shopping.ecommerce.entity.Orders;
-import com.shopping.ecommerce.repository.OrderRepository;
 import com.shopping.ecommerce.service.AdminOrderService;
-import com.shopping.ecommerce.service.OrderService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -21,27 +19,23 @@ import java.util.List;
 @CrossOrigin(origins = {"*"}, allowedHeaders = {"*"}, exposedHeaders = {"*"}, methods = {RequestMethod.GET, RequestMethod.DELETE, RequestMethod.POST, RequestMethod.PUT})
 public class AdminStatusControl {
     private final AdminOrderService orderService;
-    private final OrderRepository orderRepository;
 
     @Autowired
-    public AdminStatusControl(AdminOrderService orderService,OrderRepository orderRepository ){
+    public AdminStatusControl(AdminOrderService orderService){
         this.orderService = orderService;
-        this.orderRepository = orderRepository;
     }
+
 
     private boolean isAdmin(String token) {
         try {
-            System.out.println("Received Token: " + token);
             byte[] keyBytes = "adbashdgasgdahjshdjagsdgjhasdjahgdhasghjdgahjsgdhgsfvgavjvfgavytsdgavsdyasfgavgfvatyvdagbsgvfatyad".getBytes();
             System.out.println("key bytes: " + keyBytes);
             Claims claims = Jwts.parser()
                     .setSigningKey(keyBytes)
                     .parseClaimsJws(token)
                     .getBody();
-            System.out.println("Token Claims: " + claims);
 
             String role = (String) claims.get("role");
-            System.out.println("Role in Token: " + role);
             return "admin".equals(role);
         } catch (JwtException e) {
             System.err.println("Token Verification Failed: " + e.getMessage());

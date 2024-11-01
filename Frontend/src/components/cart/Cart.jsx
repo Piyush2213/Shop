@@ -94,13 +94,14 @@ export function Cart() {
                     },
                 }
             );
+            console.log('Order Response:', response.data);
     
             if (response.status === 201) {
-                const orderId = response.data.data.id;
+                const razorPayOrderId = response.data.data.razorPayOrderId;
     
                 // Generate the payment link
                 const paymentResponse = await axios.post(
-                    `${base_url}/api/payments/${orderId}`,
+                    `${base_url}/api/payments/${razorPayOrderId}`,
                     {},
                     {
                         headers: {
@@ -109,11 +110,12 @@ export function Cart() {
                     }
                 );
                 console.log('Payment Response:', paymentResponse.data);
+                
 
     
                 if (paymentResponse.status === 201) {
                     console.log(paymentResponse.data.data.payment_link_url);
-                    const paymentLink = paymentResponse.data.data.payment_link_url; // Correct property name here
+                    const paymentLink = paymentResponse.data.data.payment_link_url; 
                     if (paymentLink) {
                         // Redirect to the Razorpay payment page
                         window.location.href = paymentLink;

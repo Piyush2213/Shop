@@ -1,10 +1,8 @@
 package com.shopping.ecommerce.service;
 
-import com.razorpay.Payment;
-import com.razorpay.PaymentLink;
-import com.razorpay.RazorpayClient;
-import com.razorpay.RazorpayException;
+import com.razorpay.*;
 import com.shopping.ecommerce.entity.*;
+import com.shopping.ecommerce.entity.Customer;
 import com.shopping.ecommerce.exception.ExistsException;
 import com.shopping.ecommerce.exception.OrderException;
 import com.shopping.ecommerce.repository.*;
@@ -110,34 +108,29 @@ public class OrderService {
         order.setTotalAmount(totalAmount);
         order.setDateTime(LocalDateTime.now());
         order.setDeliveryAddress(savedAddress);
+        order.setOrderStatus(OrderStatus.PENDING);
 
         Orders createdOrder = orderRepository.save(order);
 
         RazorpayClient razorpay = new RazorpayClient(apiKey, apiSecret);
-        JSONObject paymentLinkRequest = new JSONObject();
-        paymentLinkRequest.put("amount", order.getTotalAmount().multiply(new BigDecimal(100)).intValue()); // Amount in paise (INR currency)
+        JSONObject orderRequest = new JSONObject();
+        orderRequest.put("amount",order.getTotalAmount().multiply(new BigDecimal(100)).intValue());
+        orderRequest.put("currency","INR");
+        orderRequest.put("receipt", order.getCustomer().getEmail());
 
-        JSONObject customerJson = new JSONObject();
-        customerJson.put("name", order.getCustomer().getName());
-        customerJson.put("email", order.getCustomer().getEmail());
-        paymentLinkRequest.put("customer", customerJson);
 
-        JSONObject notify = new JSONObject();
-        notify.put("email", true);
-        notify.put("sms", true);
-        paymentLinkRequest.put("notify", notify);
+        Order razorPayOrderDetails = razorpay.orders.create(orderRequest);
 
-        paymentLinkRequest.put("callback_url", "http://localhost:5173/orders");
-        paymentLinkRequest.put("callback_method", "get");
-        System.out.println("Payment Link Request: " + paymentLinkRequest.toString());
+        String razorPayStatus = razorPayOrderDetails.get("status");
 
-        PaymentLink payment = razorpay.paymentLink.create(paymentLinkRequest);
-
-        String paymentLinkId = payment.get("id");
-        String paymentLinkUrl = payment.get("short_url");
-        System.out.println("Payment Link URL: " + paymentLinkUrl);
-        System.out.println("Payment Link Id: " + paymentLinkId);
-
+        try {
+            createdOrder.setRazorPayOrderId(razorPayOrderDetails.get("id"));
+            createdOrder.setOrderStatus(OrderStatus.valueOf(razorPayStatus.toUpperCase()));
+        } catch (IllegalArgumentException e) {
+            createdOrder.setOrderStatus(OrderStatus.PENDING);
+        }
+        System.out.println("Created order: "+ createdOrder);
+        orderRepository.save(createdOrder);
 
 
 
@@ -147,10 +140,11 @@ public class OrderService {
         response.setTotalAmount(createdOrder.getTotalAmount());
         response.setCustomerId(customer.getId());
         response.setDateTime(createdOrder.getDateTime());
-        response.setOrderStatus(OrderStatus.PENDING);
+        response.setOrderStatus(createdOrder.getOrderStatus());
         response.setDeliveryAddress(savedAddress);
         response.setProductIds(productIds);
-        response.setPaymentLinkUrl(paymentLinkUrl);
+        response.setRazorPayOrderId(createdOrder.getRazorPayOrderId());
+
 
         List<OrderItemResponse> orderItemResponses = new ArrayList<>();
         for (OrderItem orderItem : createdOrder.getOrderItems()) {
@@ -160,12 +154,10 @@ public class OrderService {
         }
         response.setOrderItems(orderItemResponses);
 
-        ServiceResponse<Payment> getPaymentDetails = getPaymentDetails(paymentLinkId);
-        System.out.println("Response of redirect"+ getPaymentDetails);
 
         String subject = "Order Confirmation";
         String body = "Thank you for your order!\n\n" +
-                "Order ID: " + createdOrder.getId() + "\n" +
+                "Order ID: " + createdOrder.getRazorPayOrderId() + "\n" +
                 "Total Amount: " + createdOrder.getTotalAmount() + "\n" +
                 "Delivery Address: " + savedAddress.getHouseNo() + ", " + savedAddress.getStreet() + ", " + savedAddress.getCity() + ", " + savedAddress.getPin() + "\n" +
                 "Products:\n";
@@ -174,7 +166,6 @@ public class OrderService {
             body += orderItem.getProductName() + " - Quantity: " + orderItem.getQuantity() + ", Price: " + orderItem.getPrice() + "\n";
         }
         emailService.sendEmail(customer.getEmail(), subject, body);
-
 
         cartItemRepository.deleteByCart(cart);
         cartRepository.deleteByCustomerId(customer.getId());
@@ -276,21 +267,13 @@ public class OrderService {
         return null;
     }
 
-    public Orders findOrderById(Integer id) {
-        return orderRepository.findById(id).orElse(null);
-    }
 
-    public ServiceResponse<Payment> getPaymentDetails(String paymentId) {
-        System.out.println("Payment id recieved inside the getPaymentREsponse" + paymentId);
-        try {
-            RazorpayClient razorpay = new RazorpayClient(apiKey, apiSecret);
-            Payment payment = razorpay.payments.fetch(paymentId);
-            String status = payment.get("status");
-            System.out.println("Status is : " + status);
-            return new ServiceResponse<>(payment, "Payment details retrieved successfully.", HttpStatus.OK);
-        } catch (RazorpayException e) {
-            return new ServiceResponse<>(null, "Error in processing payment.", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+
+
+
+
+
+
+
 
 }

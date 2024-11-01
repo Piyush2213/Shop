@@ -17,8 +17,30 @@ export const Orders = () => {
     const navigate = useNavigate(); 
 
     useEffect(() => {
-        fetchOrders();
+        const fetchOrdersAndUpdateStatus = async () => {
+            const token = Cookies.get('token');
+            console.log("Token:", token);
+            if (!token) {
+                toast.error('You need to log in first.');
+                return;
+            }
+            try {
+                // First, update order statuses
+                const response = await axios.post(`${base_url}/api/payments/fetch-status`, {},{
+                    headers: {
+                        Authorization: token,
+                    },
+                });
+    
+                fetchOrders();
+            } catch (error) {
+                toast.error("Failed to update order statuses: " + error.message);
+            }
+        };
+    
+        fetchOrdersAndUpdateStatus();
     }, []);
+    
 
     const cancelOrder = async (orderId) => {
         try {

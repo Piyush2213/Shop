@@ -14,7 +14,6 @@ import AddressEntry from './components/address/AddressEntry';
 import { Orders } from './components/orders/Orders';
 import { AdminLogin } from './components/admin/header/AdminLogin';
 import { OrdersList } from './components/admin/header/allOrders/OrderList';
-import PaymentSuccess from './components/payment/PaymentSuccess';
 
 
 function App() {
@@ -36,7 +35,6 @@ function App() {
         <Route path="/Orderslist" element={<OrdersList />} />
         <Route path="/address-entry" element={<AddressEntry />} />
         <Route path="/verification" element={<Verification />} />
-        <Route path="/payment/:orderId" element={<PaymentSuccess />} />
       </Routes>
     </Router>
   )

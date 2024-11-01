@@ -6,6 +6,8 @@ COPY package*.json ./
 
 RUN npm install
 
+RUN npx browserslist@latest --update-db
+
 COPY . .
 
 EXPOSE 5173
