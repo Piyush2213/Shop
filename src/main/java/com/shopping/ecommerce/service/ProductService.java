@@ -1,4 +1,6 @@
 package com.shopping.ecommerce.service;
+import com.fasterxml.jackson.core.type.TypeReference;
+
 
 import com.shopping.ecommerce.entity.Product;
 import com.shopping.ecommerce.response.ServiceResponse;
@@ -23,10 +25,13 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ModelMapper modelMapper;
+    private final RedisService redisService;
+
     @Autowired
-    public ProductService(ProductRepository productRepository, ModelMapper modelMapper){
+    public ProductService(ProductRepository productRepository, ModelMapper modelMapper, RedisService redisService){
         this.productRepository = productRepository;
         this.modelMapper = modelMapper;
+        this.redisService = redisService;
     }
 
     public List<ProductsResponse> getAllProducts(int page, int perPage, String sort, List<String> subCategory) {
@@ -59,6 +64,14 @@ public class ProductService {
 
 
     public ServiceResponse<ProductResponse> getProduct(Integer id){
+        ServiceResponse<ProductResponse> cachedResponse = redisService.get("Product" + id, new TypeReference<ServiceResponse<ProductResponse>>() {});
+        // Check if we have a cached response
+        if (cachedResponse != null && cachedResponse.getData() != null) {
+            System.out.println("Cache is invoked............................................../////");
+            return cachedResponse; // Return cached response if it exists
+        }
+        System.out.println("Cache is not invoked............................................../////");
+
         //optional does not return null even if product not found, it will return empty object.
         Optional<Product> optionalProduct = productRepository.findById(id);
         if (optionalProduct.isEmpty()) {
@@ -67,6 +80,7 @@ public class ProductService {
 
         Product product = optionalProduct.get();
         ProductResponse response = modelMapper.map(product, ProductResponse.class);
+        redisService.set("Product" + id, new ServiceResponse<>(response, "Product Found", HttpStatus.OK), 7200L);
 
         return new ServiceResponse<>(response, "Product Found", HttpStatus.OK);
     }

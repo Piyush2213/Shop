@@ -20,6 +20,7 @@ export const OrdersList = () => {
           Authorization: token,
         },
       });
+      console.log('Orders fetched:', response.data);
       setOrders(response.data);
     } catch (error) {
       console.error('Error fetching orders:', error);

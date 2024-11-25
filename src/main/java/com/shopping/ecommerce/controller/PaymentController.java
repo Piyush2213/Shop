@@ -3,11 +3,8 @@ package com.shopping.ecommerce.controller;
 
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
-import com.shopping.ecommerce.entity.Customer;
-import com.shopping.ecommerce.entity.OrderStatus;
-import com.shopping.ecommerce.entity.Orders;
+import com.shopping.ecommerce.entity.*;
 import com.razorpay.PaymentLink;
-import com.shopping.ecommerce.entity.Payments;
 import com.shopping.ecommerce.repository.CustomerRepository;
 import com.shopping.ecommerce.repository.OrderRepository;
 import com.shopping.ecommerce.repository.PaymentRepository;
@@ -23,7 +20,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 
 @RestController
@@ -122,53 +118,6 @@ public class PaymentController {
         } catch (RazorpayException e) {
             e.printStackTrace();
             return new ResponseEntity<>(new ServiceResponse<>(null, "Error in creating payment link: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-
-    @PostMapping("/payments/fetch-status")
-    public ResponseEntity<ServiceResponse<List<Orders>>> updateOrderStatuses(HttpServletRequest req) {
-        try {
-            String token = req.getHeader(AUTHORIZATION_HEADER);
-            Customer customer = getUserFromToken(token);
-            List<Payments> payments = paymentRepository.findByCustomerId(customer.getId());
-
-            RazorpayClient razorpay = new RazorpayClient(apiKey, apiSecret);
-
-            for (Payments payment : payments) {
-
-                String paymentLinkId = payment.getPaymentLinkId();
-
-                PaymentLink paymentLink = razorpay.paymentLink.fetch(paymentLinkId);
-
-                String status = paymentLink.get("status");
-
-                Orders order = orderRepository.findByRazorPayOrderIdAndPaymentLinkId(payment.getRazorPayOrderId(), paymentLinkId);
-
-                if (order != null) {
-                    // Update order status based on the payment status
-                    if ("paid".equalsIgnoreCase(status)) {
-                        order.setOrderStatus(OrderStatus.PAID);
-                    } else if ("created".equalsIgnoreCase(status)) {
-                        order.setOrderStatus(OrderStatus.CREATED);
-                    } else if ("cancelled".equalsIgnoreCase(status)) {
-                        order.setOrderStatus(OrderStatus.CANCELLED);
-                    } else if ("expired".equalsIgnoreCase(status)) {
-                        order.setOrderStatus(OrderStatus.EXPIRED);
-                    } else if ("partially_paid".equalsIgnoreCase(status)) {
-                        order.setOrderStatus(OrderStatus.PARTIALLY_PAID);
-                    } else {
-                        order.setOrderStatus(OrderStatus.PENDING);
-                    }
-                    orderRepository.save(order);
-                }
-            }
-
-            return new ResponseEntity<>(new ServiceResponse<>(null, "Order statuses updated successfully.", HttpStatus.OK), HttpStatus.OK);
-        } catch (RazorpayException e) {
-            return new ResponseEntity<>(new ServiceResponse<>(null, "Error fetching payment link status: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new ServiceResponse<>(null, "Error updating order statuses: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

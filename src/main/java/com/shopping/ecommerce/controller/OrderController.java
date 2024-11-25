@@ -40,7 +40,7 @@ public class OrderController {
     }
 
     @DeleteMapping("/{orderId}")
-    public ResponseEntity<ServiceResponse<String>> cancelOrder(@PathVariable("orderId") int orderId,HttpServletRequest req){
+    public ResponseEntity<ServiceResponse<String>> cancelOrder(@PathVariable("orderId") int orderId, HttpServletRequest req) throws RazorpayException {
         ServiceResponse<String> serviceResponse = orderService.cancelOrder(orderId,req);
         return ResponseEntity.status(serviceResponse.getStatus()).body(serviceResponse);
     }
