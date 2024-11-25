@@ -1,5 +1,6 @@
 package com.shopping.ecommerce.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,6 +26,7 @@ public class Orders {
 
     @ManyToOne
     @JoinColumn(name = "customer_id")
+    @JsonIgnore
     private Customer customer;
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
@@ -48,6 +50,15 @@ public class Orders {
 
     @Column(name = "paymentLinkId")
     private String paymentLinkId;
+
+    @Column(name = "razorpay_amount", precision = 10, scale = 2)
+    private BigDecimal razorpayAmount;
+
+    @Column(name = "razorpay_currency")
+    private String razorpayCurrency;
+
+    @Column(name = "razorpay_receipt")
+    private String razorpayReceipt;
 
 
 

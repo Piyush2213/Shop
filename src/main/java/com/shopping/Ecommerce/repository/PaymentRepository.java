@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface PaymentRepository extends JpaRepository<Payments, Long> {
     List<Payments> findByCustomerId(int customerId);
+    Payments findByRazorPayOrderId(String razorpayOrderId);
 
 }

@@ -1,12 +1,12 @@
 package com.shopping.ecommerce.service;
 
 import com.razorpay.*;
+import com.razorpay.RazorpayClient;
+
 import com.shopping.ecommerce.entity.*;
 import com.shopping.ecommerce.entity.Customer;
-import com.shopping.ecommerce.exception.ExistsException;
-import com.shopping.ecommerce.exception.OrderException;
+
 import com.shopping.ecommerce.repository.*;
-import com.shopping.ecommerce.response.ApiResponse;
 import com.shopping.ecommerce.response.OrderItemResponse;
 import com.shopping.ecommerce.response.OrderResponse;
 import com.shopping.ecommerce.response.ServiceResponse;
@@ -16,15 +16,16 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigDecimal;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 
 @Service
@@ -35,24 +36,21 @@ public class OrderService {
     private final CartItemRepository cartItemRepository;
     private final AddressRepository addressRepository;
     private final ProductRepository productRepository;
-    private final OrderItemRepository orderItemRepository;
     private final EmailService emailService;
     private final ModelMapper modelMapper;
 
     @Autowired
     public OrderService(CustomerRepository customerRepository, OrderRepository orderRepository, CartRepository cartRepository,
-                        CartItemRepository cartItemRepository, AddressRepository addressRepository, ProductRepository productRepository,
-                        OrderItemRepository orderItemRepository, EmailService emailService, ModelMapper modelMapper) {
+                        CartItemRepository cartItemRepository, AddressRepository addressRepository, ProductRepository productRepository
+                         , EmailService emailService, ModelMapper modelMapper) {
         this.customerRepository = customerRepository;
         this.orderRepository = orderRepository;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.addressRepository = addressRepository;
         this.productRepository = productRepository;
-        this.orderItemRepository = orderItemRepository;
         this.emailService = emailService;
         this.modelMapper = modelMapper;
-
     }
 
     @Value("${razorpay.api.key}")
@@ -116,16 +114,23 @@ public class OrderService {
         JSONObject orderRequest = new JSONObject();
         orderRequest.put("amount",order.getTotalAmount().multiply(new BigDecimal(100)).intValue());
         orderRequest.put("currency","INR");
-        orderRequest.put("receipt", order.getCustomer().getEmail());
+        orderRequest.put("receipt", generateUniqueReceiptNumber());
+
 
 
         Order razorPayOrderDetails = razorpay.orders.create(orderRequest);
 
         String razorPayStatus = razorPayOrderDetails.get("status");
+        BigDecimal razorpayAmount = order.getTotalAmount();
+        String razorpayCurrency = "INR";
+        String razorpayReceipt = generateUniqueReceiptNumber();
 
         try {
             createdOrder.setRazorPayOrderId(razorPayOrderDetails.get("id"));
             createdOrder.setOrderStatus(OrderStatus.valueOf(razorPayStatus.toUpperCase()));
+            createdOrder.setRazorpayAmount(razorpayAmount);
+            createdOrder.setRazorpayCurrency(razorpayCurrency);
+            createdOrder.setRazorpayReceipt(razorpayReceipt);
         } catch (IllegalArgumentException e) {
             createdOrder.setOrderStatus(OrderStatus.PENDING);
         }
@@ -183,6 +188,7 @@ public class OrderService {
             return new ServiceResponse<>(null, INVALID_TOKEN, HttpStatus.UNAUTHORIZED);
         }
         List<Orders> orders = orderRepository.findAllByCustomerId(customer.getId());
+        System.out.println("These are all orders" + orders);
         List<OrderResponse> orderResponses = new ArrayList<>();
 
         for (Orders order : orders) {
@@ -208,6 +214,7 @@ public class OrderService {
             orderResponse.setCustomerId(order.getCustomer().getId());
             orderResponse.setOrderItems(orderedProductsList);
             orderResponse.setDateTime(order.getDateTime());
+            System.out.println("Order Status in get order is: " + order.getOrderStatus());
             orderResponse.setOrderStatus(order.getOrderStatus());
             orderResponse.setDeliveryAddress(order.getDeliveryAddress());
 
@@ -226,7 +233,7 @@ public class OrderService {
 
 
     @Transactional
-    public ServiceResponse<String> cancelOrder(int orderId, HttpServletRequest req) {
+    public ServiceResponse<String> cancelOrder(int orderId, HttpServletRequest req) throws RazorpayException {
         String token = req.getHeader(AUTHORIZATION_HEADER);
         Customer customer = getUserFromToken(token);
 
@@ -234,18 +241,20 @@ public class OrderService {
             return new ServiceResponse<>(null, INVALID_TOKEN, HttpStatus.UNAUTHORIZED);
         }
 
-        // Check if the order belongs to the customer
         Orders order = orderRepository.findByIdAndCustomerId(Long.valueOf(orderId), customer.getId());
         if (order == null) {
             return new ServiceResponse<>(null, "Order not found or does not belong to the customer.", HttpStatus.NOT_FOUND);
         }
 
+        System.out.println("Order status: " + order.getOrderStatus());
+
         order.setOrderStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
 
-        orderItemRepository.deleteByOrder(order);
-        String subject = "Order Confirmation";
-        String body = "Thank you for your shopping!\n\n";
+        System.out.println("Order status after updating: " + order.getOrderStatus());
+
+        String subject = "Order Cancellation";
+        String body = "Thank you for your shopping!. You will get your refund within 4-5 business days.\n\n";
         emailService.sendEmail(customer.getEmail(), subject, body);
 
         return new ServiceResponse<>(null,"Order cancelled successfully.", HttpStatus.OK);
@@ -265,6 +274,20 @@ public class OrderService {
             return customer;
         }
         return null;
+    }
+    private static String generateUniqueReceiptNumber() {
+        String input = System.currentTimeMillis() + UUID.randomUUID().toString();
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hashedBytes = md.digest(input.getBytes());
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashedBytes) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString().substring(0, 40);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Error generating receipt number", e);
+        }
     }
 
 

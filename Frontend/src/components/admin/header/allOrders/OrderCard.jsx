@@ -17,6 +17,7 @@ const OrderCard = ({ order, onUpdateStatus }) => {
                     },
                 }
             );
+            console.log(response);
 
             if (response.status === 200) {
                 onUpdateStatus(order.id, selectedStatus);
@@ -45,10 +46,10 @@ const OrderCard = ({ order, onUpdateStatus }) => {
                             value={selectedStatus}
                             onChange={(e) => setSelectedStatus(e.target.value)}
                         >
-                            <option value="Pending">PENDING</option>
-                            <option value="Shipped">SHIPPED</option>
-                            <option value="Out_Of_Delivery">OUT_OF_DELIVERY</option>
-                            <option value="Delivered">DELIVERED</option>
+                            <option value="PENDING">PENDING</option>
+                            <option value="SHIPPED">SHIPPED</option>
+                            <option value="OUT_OF_DELIVERY">OUT_OF_DELIVERY</option>
+                            <option value="DELIVERED">DELIVERED</option>
                         </select>
                         <button
                             className="mt-4 w-full rounded-sm bg-black px-2 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-black/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"

@@ -140,7 +140,6 @@ public class CartService {
         }
 
         CartItemListResponse cartItemListResponse = new CartItemListResponse(cartItemResponses, totalAmount);
-
         return new ServiceResponse<>(cartItemListResponse, "Response Generated", HttpStatus.OK);
     }
 

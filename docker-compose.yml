@@ -16,6 +16,25 @@ services:
     networks:
       - bootapp
 
+  redis:
+    container_name: redis
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli -a eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81 ping | grep PONG" ]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis:/data
+    networks:
+      - bootapp
+
+
+
   es8:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
     container_name: es8
@@ -44,6 +63,8 @@ services:
   appservice:
     build: .
     depends_on:
+      redis:
+        condition: service_healthy
       dbservice:
         condition: service_healthy
       es8:
@@ -67,6 +88,11 @@ services:
       SPRING_MAIL_PASSWORD: pwac qtgv fpfs iehs
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_PASSWORD: eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    links:
+      - redis
     volumes:
       - app_data:/path/to/app_data
     ports:
@@ -99,3 +125,4 @@ volumes:
   db_data:
   app_data:
   es8_data:
+  redis:
