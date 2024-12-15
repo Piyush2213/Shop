@@ -33,9 +33,9 @@ export function Header2({ username, token }) {
                         <NavLink to="/products" activeClassName="active">
                             <div className="inline-flex items-center">
                                 <img
-                                    src="https://svgsilh.com/svg_v2/189064.svg"
+                                    src="https://trendymarts.odoo.com/web/image/website/1/logo?unique=c97c590"
                                     alt="DevUI Logo"
-                                    width="80"
+                                    width="120"
                                     height="46"
                                 />
                                 {username && (

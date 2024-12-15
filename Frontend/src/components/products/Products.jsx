@@ -15,6 +15,16 @@ export function Products() {
         document.title = 'Ebay';
     }, []);
 
+    useEffect(() => {
+            const intervalId = setInterval(() => {
+                setCurrentSlide((prevSlide) => (prevSlide === fashionImages.length - 1 ? 0 : prevSlide + 1));
+            }, 5000); 
+
+
+            return () => clearInterval(intervalId);
+    }, []);
+
+
     const [products, setProducts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -26,6 +36,23 @@ export function Products() {
     const [searchTerm, setSearchTerm] = useState('');
     const [activeButton, setActiveButton] = useState(null);
     const [selectedSubcategory, setSelectedSubcategory] = useState('');
+
+    // State for managing the carousel images
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const fashionImages = [
+        'https://itseeze.com/_webedit/cached-images/3214-0-792-1736-8416-6312-1132.png',
+        'https://www.shutterstock.com/image-photo/happy-byer-shopping-bags-standing-600nw-1927526819.jpg',
+        'https://media.licdn.com/dms/image/v2/C4D12AQFk2H0RcBu3fw/article-cover_image-shrink_600_2000/article-cover_image-shrink_600_2000/0/1553606450524?e=2147483647&v=beta&t=GqAH020V7qwa9WIrnFxvjyNSCmdvM7txkgF6EQCqpJc',
+        'https://i.pinimg.com/736x/b8/3f/6c/b83f6c2bb10b0bfe7cf4ab07e3e35b41.jpg'
+    ];
+
+    const handlePrevSlide = () => {
+        setCurrentSlide((prevSlide) => (prevSlide === 0 ? fashionImages.length - 1 : prevSlide - 1));
+    };
+
+    const handleNextSlide = () => {
+        setCurrentSlide((prevSlide) => (prevSlide === fashionImages.length - 1 ? 0 : prevSlide + 1));
+    };
 
     const handleSubcategorySelect = (e) => {
         setSelectedSubcategory(e.target.value);
@@ -150,9 +177,34 @@ export function Products() {
         setActiveButton('min');
     };
 
+
+
+
     return (
         <div>
             <Header2 username={username} token={token} />
+            <div className="my-10 relative">
+                <div className="relative w-full overflow-hidden">
+                    <img
+                        src={fashionImages[currentSlide]}
+                        alt="Fashion Item"
+                        className="w-full rounded-md transition-all duration-500 carousel-image "
+                        style={{ height: '350px' }}
+                    />
+                    <button
+                        onClick={handlePrevSlide}
+                        className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-black text-white p-2 rounded-full"
+                    >
+                        &#60;
+                    </button>
+                    <button
+                        onClick={handleNextSlide}
+                        className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-black text-white p-2 rounded-full"
+                    >
+                        &#62;
+                    </button>
+                </div>
+            </div>
 
             <SearchBar
                 onSearchButtonClick={handleSearchButtonClick}
