@@ -34,13 +34,11 @@ export const SignUp = () => {
 
         try {
             const response = await axios.post(`${base_url}/customers/signup`, signUpData);
-            console.log(response);
             setSuccessMessage('Sign up successful! Redirecting to login...');
             setTimeout(() => {
                 navigate('/verification');
             }, 2000);
         } catch (error) {
-            console.error(error);
             setErrorMessage('Unable to sign up. Already have an account.');
         }
     };
