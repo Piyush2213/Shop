@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import Logo from './Logo.jpg';
 
 export function Header() {
     return (
@@ -10,7 +11,7 @@ export function Header() {
                         <Link to="/products">
                             <div className="inline-flex items-center">
                                 <img
-                                    src="https://trendymarts.odoo.com/web/image/website/1/logo?unique=c97c590"
+                                    src={Logo}
                                     alt="DevUI Logo"
                                     width="120"
                                     height="46"

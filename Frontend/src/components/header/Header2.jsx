@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import Logo from './Logo.jpg';
 
 export function Header2({ username, token }) {
     const handleLogout = () => {
@@ -33,7 +34,7 @@ export function Header2({ username, token }) {
                         <NavLink to="/products" activeClassName="active">
                             <div className="inline-flex items-center">
                                 <img
-                                    src="https://trendymarts.odoo.com/web/image/website/1/logo?unique=c97c590"
+                                    src={Logo}
                                     alt="DevUI Logo"
                                     width="120"
                                     height="46"
