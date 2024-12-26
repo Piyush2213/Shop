@@ -96,3 +96,23 @@ Feel free to fork the repository and submit pull requests. Contributions are alw
 ---
 
 This version of the README file is designed to make the setup as easy as possible. It explains that by simply cloning the repo and running `docker-compose up --build`, all dependencies like React, Spring Boot, Redis, and MySQL will be set up automatically, without needing to manually configure or install them.
+
+---
+## **Website Preview**
+Here are some photos of the website to give you an idea of how it looks:
+- **Product Page** 
+<img width="1507" alt="Screenshot 2024-12-22 at 10 50 35 AM" src="https://github.com/user-attachments/assets/d4a34855-999c-4076-85bb-ccfe5c0f4b73" />
+
+
+- **All Product Page**
+<img width="1026" alt="Screenshot 2024-12-22 at 10 49 49 AM" src="https://github.com/user-attachments/assets/4273bdd4-a0dd-419a-b816-f59e7732ef72" />
+
+
+- **Orders Page**
+<img width="1509" alt="Screenshot 2024-12-22 at 10 50 53 AM" src="https://github.com/user-attachments/assets/9406c517-49eb-4c1f-ab7b-ee264073517a" />
+
+
+- **Cart Page**
+<img width="1387" alt="Screenshot 2024-12-22 at 10 52 04 AM" src="https://github.com/user-attachments/assets/cf3a2eae-f1ba-493f-9fcc-243504d8b09d" />
+
+---
